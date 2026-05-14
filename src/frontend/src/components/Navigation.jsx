@@ -90,6 +90,18 @@ const Navigation = () => {
           >
             用户管理
           </Link>
+          <Link
+            to="/settings"
+            className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}
+          >
+            系统设置
+          </Link>
+          <Link
+            to="/logs"
+            className={`nav-link ${location.pathname === '/logs' ? 'active' : ''}`}
+          >
+            日志管理
+          </Link>
 
           <div className="navbar-user">
             <span className="user-info">{user?.username}</span>
