@@ -2,15 +2,21 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const config = {
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'hjtpx',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  max: parseInt(process.env.DB_POOL_MAX) || (isProduction ? 30 : 10),
+  min: parseInt(process.env.DB_POOL_MIN) || 2,
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,
+  connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 5000,
+  acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT) || 10000,
+  reapIntervalMillis: 1000,
+  allowExitOnIdle: false
 };
 
 const pool = new Pool(config);

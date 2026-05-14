@@ -1,17 +1,49 @@
 const pool = require('../../config/database/db');
 const bcrypt = require('bcrypt');
 const authService = require('./authService');
+const cacheService = require('./cacheService');
+const queryOptimizer = require('../utils/queryOptimizer');
 
 const VALID_ROLES = ['admin', 'user', 'moderator'];
+const CACHE_KEYS = {
+  ALL_USERS: 'users:all',
+  USER_BY_ID: (id) => `users:id:${id}`
+};
+const CACHE_TTL = 300;
 
 async function getAllUsers() {
-  const result = await pool.query('SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC');
-  return result.rows;
+  const cached = await cacheService.get(CACHE_KEYS.ALL_USERS);
+  if (cached) {
+    return cached;
+  }
+
+  const result = await queryOptimizer.cachedQuery(
+    'SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC',
+    [],
+    CACHE_TTL
+  );
+
+  await cacheService.set(CACHE_KEYS.ALL_USERS, result, CACHE_TTL);
+  return result;
 }
 
 async function getUserById(id) {
-  const result = await pool.query('SELECT id, email, name, role, created_at FROM users WHERE id = $1', [id]);
-  return result.rows[0];
+  const cacheKey = CACHE_KEYS.USER_BY_ID(id);
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const result = await queryOptimizer.cachedQuery(
+    'SELECT id, email, name, role, created_at FROM users WHERE id = $1',
+    [id],
+    CACHE_TTL
+  );
+
+  if (result[0]) {
+    await cacheService.set(cacheKey, result[0], CACHE_TTL);
+  }
+  return result[0];
 }
 
 async function createUser({ email, name, password, role = 'user' }) {
@@ -30,6 +62,10 @@ async function createUser({ email, name, password, role = 'user' }) {
     'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, created_at',
     [email, name, hashedPassword, role]
   );
+
+  await cacheService.del(CACHE_KEYS.ALL_USERS);
+  queryOptimizer.clearCache();
+
   return result.rows[0];
 }
 
@@ -68,11 +104,24 @@ async function updateUser(id, { email, name, password, role }) {
     `UPDATE users SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramCount} RETURNING id, email, name, role, created_at`,
     values
   );
+
+  await Promise.all([
+    cacheService.del(CACHE_KEYS.ALL_USERS),
+    cacheService.del(CACHE_KEYS.USER_BY_ID(id))
+  ]);
+  queryOptimizer.clearCache();
+
   return result.rows[0];
 }
 
 async function deleteUser(id) {
   await pool.query('DELETE FROM users WHERE id = $1', [id]);
+
+  await Promise.all([
+    cacheService.del(CACHE_KEYS.ALL_USERS),
+    cacheService.del(CACHE_KEYS.USER_BY_ID(id))
+  ]);
+  queryOptimizer.clearCache();
 }
 
 module.exports = {

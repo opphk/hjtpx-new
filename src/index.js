@@ -13,6 +13,7 @@ const responseFormatter = require('./backend/middleware/responseFormatter');
 const { logger, logError } = require('./backend/middleware/logger');
 const { corsMiddleware } = require('./backend/middleware/cors');
 const { ipRateLimiter } = require('./backend/middleware/rateLimiter');
+const { performanceMiddleware } = require('./backend/middleware/performanceMonitor');
 const errorHandler = require('./backend/middleware/errorHandler');
 const websocketService = require('./backend/services/websocketService');
 
@@ -39,6 +40,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(corsMiddleware);
+app.use(performanceMiddleware);
 app.use(logger);
 app.use(responseFormatter);
 

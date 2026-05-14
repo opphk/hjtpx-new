@@ -1,277 +1,186 @@
-class QueryCache {
-  constructor(maxSize = 100, ttl = 300000) {
-    this.cache = new Map();
-    this.maxSize = maxSize;
-    this.ttl = ttl;
-  }
-
-  generateKey(query, params) {
-    return JSON.stringify({ query, params });
-  }
-
-  get(query, params) {
-    const key = this.generateKey(query, params);
-    const entry = this.cache.get(key);
-
-    if (!entry) {
-      return null;
-    }
-
-    if (Date.now() - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.result;
-  }
-
-  set(query, params, result) {
-    const key = this.generateKey(query, params);
-
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-    }
-
-    this.cache.set(key, {
-      result,
-      timestamp: Date.now(),
-    });
-  }
-
-  clear() {
-    this.cache.clear();
-  }
-
-  getSize() {
-    return this.cache.size;
-  }
-}
-
-class QueryAnalyzer {
-  analyze(query, executionTime) {
-    const analysis = {
-      query,
-      executionTime,
-      suggestions: [],
-      complexity: this.estimateComplexity(query),
-    };
-
-    if (executionTime > 1000) {
-      analysis.suggestions.push('Query execution time is over 1 second. Consider optimization.');
-    }
-
-    if (query.toUpperCase().includes('SELECT *')) {
-      analysis.suggestions.push('Avoid SELECT * for better performance.');
-    }
-
-    if (query.toUpperCase().includes('JOIN') && query.toUpperCase().includes('SELECT')) {
-      analysis.suggestions.push('Ensure JOINs have proper indexes.');
-    }
-
-    if (!query.toUpperCase().includes('LIMIT') && query.toUpperCase().includes('SELECT')) {
-      analysis.suggestions.push('Consider adding LIMIT to restrict result set size.');
-    }
-
-    return analysis;
-  }
-
-  estimateComplexity(query) {
-    const upperQuery = query.toUpperCase();
-    let complexity = 1;
-
-    if (upperQuery.includes('JOIN')) complexity += 2;
-    if (upperQuery.includes('SUBQUERY') || upperQuery.includes('SELECT (')) complexity += 2;
-    if (upperQuery.includes('GROUP BY')) complexity += 1;
-    if (upperQuery.includes('ORDER BY')) complexity += 1;
-    if (upperQuery.includes('DISTINCT')) complexity += 1;
-    if (upperQuery.includes('LIKE')) complexity += 1;
-
-    return complexity <= 3 ? 'low' : complexity <= 6 ? 'medium' : 'high';
-  }
-}
-
-class BatchQueryOptimizer {
-  constructor(db) {
-    this.db = db;
-  }
-
-  async batchSelect(table, ids, options = {}) {
-    const { batchSize = 100, cache = null } = options;
-
-    if (!ids || ids.length === 0) {
-      return [];
-    }
-
-    const results = [];
-    for (let i = 0; i < ids.length; i += batchSize) {
-      const batch = ids.slice(i, i + batchSize);
-      const query = `SELECT * FROM ${table} WHERE id = ANY($1)`;
-      const params = [batch];
-
-      if (cache) {
-        const cached = cache.get(query, params);
-        if (cached) {
-          results.push(...cached.rows);
-          continue;
-        }
-      }
-
-      const result = await this.db.query(query, params);
-      if (cache) {
-        cache.set(query, params, result);
-      }
-      results.push(...result.rows);
-    }
-
-    return results;
-  }
-
-  async batchInsert(table, rows, options = {}) {
-    const { batchSize = 100, returning = '*' } = options;
-
-    if (!rows || rows.length === 0) {
-      return [];
-    }
-
-    const results = [];
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize);
-      const columns = Object.keys(batch[0]);
-      const values = batch.map((row, rowIndex) =>
-        columns.map((col, colIndex) => `$${rowIndex * columns.length + colIndex + 1}`)
-      ).flat();
-
-      const placeholders = batch.map((_, rowIndex) =>
-        `(${columns.map((_, colIndex) => `$${rowIndex * columns.length + colIndex + 1}`).join(', ')})`
-      ).join(', ');
-
-      const query = `
-        INSERT INTO ${table} (${columns.join(', ')})
-        VALUES ${placeholders}
-        ${returning ? `RETURNING ${returning}` : ''}
-      `;
-
-      const params = batch.flatMap(row => columns.map(col => row[col]));
-      const result = await this.db.query(query, params);
-      results.push(...result.rows);
-    }
-
-    return results;
-  }
-
-  async batchUpdate(table, updates, options = {}) {
-    const { batchSize = 100, returning = '*' } = options;
-
-    if (!updates || updates.length === 0) {
-      return [];
-    }
-
-    const results = [];
-    for (let i = 0; i < updates.length; i += batchSize) {
-      const batch = updates.slice(i, i + batchSize);
-
-      for (const update of batch) {
-        const { id, ...fields } = update;
-        const setClause = Object.keys(fields)
-          .map((col, idx) => `${col} = $${idx + 2}`)
-          .join(', ');
-        const query = `
-          UPDATE ${table}
-          SET ${setClause}
-          WHERE id = $1
-          ${returning ? `RETURNING ${returning}` : ''}
-        `;
-        const params = [id, ...Object.values(fields)];
-        const result = await this.db.query(query, params);
-        if (result.rows.length > 0) {
-          results.push(...result.rows);
-        }
-      }
-    }
-
-    return results;
-  }
-}
+const db = require('../../config/database/db');
 
 class QueryOptimizer {
-  constructor(db, options = {}) {
-    this.db = db;
-    this.cache = new QueryCache(options.cacheSize, options.cacheTtl);
-    this.analyzer = new QueryAnalyzer();
-    this.batchOptimizer = new BatchQueryOptimizer(db);
+  constructor() {
+    this.queryCache = new Map();
+    this.maxCacheSize = 100;
+    this.slowQueryThreshold = parseInt(process.env.SLOW_QUERY_THRESHOLD) || 100;
   }
 
-  async query(queryText, params = [], options = {}) {
-    const { useCache = true, analyze = false } = options;
+  cacheKey(query, params) {
+    return `${query}:${JSON.stringify(params || [])}`;
+  }
 
-    if (useCache) {
-      const cached = this.cache.get(queryText, params);
-      if (cached) {
-        if (analyze) {
-          return {
-            rows: cached.rows,
-            fromCache: true,
-            analysis: null,
-          };
-        }
-        return { rows: cached.rows, fromCache: true };
-      }
+  async cachedQuery(query, params, ttl = 60) {
+    const key = this.cacheKey(query, params);
+    
+    const cachedResult = this.queryCache.get(key);
+    if (cachedResult && Date.now() - cachedResult.timestamp < ttl * 1000) {
+      return cachedResult.data;
     }
 
     const start = Date.now();
-    const result = await this.db.query(queryText, params);
-    const executionTime = Date.now() - start;
+    const result = await db.query(query, params);
+    const duration = Date.now() - start;
 
-    if (useCache) {
-      this.cache.set(queryText, params, result);
+    if (duration > this.slowQueryThreshold) {
+      console.warn(`Slow query detected (${duration}ms): ${query}`);
     }
 
-    if (analyze) {
-      return {
-        rows: result.rows,
-        fromCache: false,
-        analysis: this.analyzer.analyze(queryText, executionTime),
-      };
+    if (this.queryCache.size >= this.maxCacheSize) {
+      const firstKey = this.queryCache.keys().next().value;
+      this.queryCache.delete(firstKey);
     }
 
-    return { rows: result.rows, fromCache: false };
+    this.queryCache.set(key, {
+      data: result.rows,
+      timestamp: Date.now()
+    });
+
+    return result.rows;
+  }
+
+  async batchQuery(queries) {
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+      
+      const results = await Promise.all(
+        queries.map(async ({ query, params }) => {
+          const result = await client.query(query, params);
+          return result.rows;
+        })
+      );
+
+      await client.query('COMMIT');
+      return results;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async batchInsert(table, rows, batchSize = 100) {
+    if (rows.length === 0) return [];
+
+    const columns = Object.keys(rows[0]);
+    const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
+    const returning = 'RETURNING *';
+
+    const allResults = [];
+    
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
+      const values = batch.flatMap(row => columns.map(col => row[col]));
+      
+      const paramOffset = i * columns.length;
+      const batchPlaceholders = batch.map((_, rowIndex) => {
+        return `(${columns.map((_, colIndex) => 
+          `$${paramOffset + rowIndex * columns.length + colIndex + 1}`
+        ).join(', ')})`;
+      }).join(', ');
+
+      const query = `
+        INSERT INTO ${table} (${columns.join(', ')})
+        VALUES ${batchPlaceholders}
+        ${returning}
+      `;
+
+      const result = await db.query(query, values);
+      allResults.push(...result.rows);
+    }
+
+    return allResults;
+  }
+
+  async batchUpdate(table, updates, idColumn = 'id', batchSize = 100) {
+    if (updates.length === 0) return [];
+
+    const allResults = [];
+    
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const batch = updates.slice(i, i + batchSize);
+      const client = await db.getClient();
+      
+      try {
+        await client.query('BEGIN');
+        
+        for (const update of batch) {
+          const id = update[idColumn];
+          const updateData = { ...update };
+          delete updateData[idColumn];
+
+          const setClause = Object.keys(updateData)
+            .map((key, idx) => `${key} = $${idx + 1}`)
+            .join(', ');
+          
+          const values = [...Object.values(updateData), id];
+          
+          const query = `
+            UPDATE ${table}
+            SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+            WHERE ${idColumn} = $${values.length}
+            RETURNING *
+          `;
+          
+          const result = await client.query(query, values);
+          allResults.push(...result.rows);
+        }
+        
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
+    return allResults;
+  }
+
+  async paginatedQuery(query, params, page = 1, pageSize = 20) {
+    const offset = (page - 1) * pageSize;
+    
+    const countQuery = query.replace(/SELECT .+ FROM/, 'SELECT COUNT(*) as total FROM');
+    const countResult = await db.query(countQuery, params);
+    const total = parseInt(countResult.rows[0]?.total || 0);
+
+    const paginatedQuery = `${query} LIMIT ${pageSize} OFFSET ${offset}`;
+    const result = await db.query(paginatedQuery, params);
+
+    return {
+      data: result.rows,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize)
+      }
+    };
+  }
+
+  async explainQuery(query, params) {
+    const explainQuery = `EXPLAIN ANALYZE ${query}`;
+    const result = await db.query(explainQuery, params);
+    return result.rows;
   }
 
   clearCache() {
-    this.cache.clear();
+    this.queryCache.clear();
   }
 
   getCacheStats() {
     return {
-      size: this.cache.getSize(),
-      maxSize: this.cache.maxSize,
+      size: this.queryCache.size,
+      maxSize: this.maxCacheSize,
+      queries: Array.from(this.queryCache.keys())
     };
-  }
-
-  async batchSelect(table, ids, options = {}) {
-    return this.batchOptimizer.batchSelect(table, ids, {
-      ...options,
-      cache: options.useCache ? this.cache : null,
-    });
-  }
-
-  async batchInsert(table, rows, options = {}) {
-    return this.batchOptimizer.batchInsert(table, rows, options);
-  }
-
-  async batchUpdate(table, updates, options = {}) {
-    return this.batchOptimizer.batchUpdate(table, updates, options);
-  }
-
-  analyzeQuery(query, executionTime) {
-    return this.analyzer.analyze(query, executionTime);
   }
 }
 
-module.exports = {
-  QueryCache,
-  QueryAnalyzer,
-  BatchQueryOptimizer,
-  QueryOptimizer,
-};
+const queryOptimizer = new QueryOptimizer();
+
+module.exports = queryOptimizer;
