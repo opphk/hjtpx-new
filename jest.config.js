@@ -26,13 +26,25 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   clearMocks: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'clover'],
+  coverageReporters: ['text', 'lcov', 'clover', 'json-summary', 'json'],
   coverageThreshold: {
     global: {
-      branches: 30,
-      functions: 30,
-      lines: 30,
-      statements: 30
+      branches: 40,
+      functions: 45,
+      lines: 50,
+      statements: 50
+    },
+    './src/utils/': {
+      branches: 60,
+      functions: 65,
+      lines: 70,
+      statements: 70
+    },
+    './src/models/': {
+      branches: 50,
+      functions: 55,
+      lines: 60,
+      statements: 60
     }
   },
   testPathIgnorePatterns: ['/node_modules/', '/frontend/node_modules/'],

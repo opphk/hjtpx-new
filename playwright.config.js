@@ -1,15 +1,15 @@
-const { defineConfig, devices } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
 
-module.exports = defineConfig({
-  testDir: './tests/e2e',
+export default defineConfig({
+  testDir: './src/frontend/tests/e2e',
+  timeout: 30000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  timeout: 30000,
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: 'http://localhost:3001',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -36,10 +36,11 @@ module.exports = defineConfig({
       use: { ...devices['iPhone 12'] },
     },
   ],
-  webServer: process.env.CI ? undefined : {
-    command: 'npm run start',
-    url: 'http://localhost:3000',
+  webServer: {
+    command: 'cd src/frontend && npm run dev',
+    url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    cwd: '.'
   },
 });

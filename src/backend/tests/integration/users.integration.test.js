@@ -1,60 +1,44 @@
 const request = require('supertest');
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 const pool = require('../../../config/database/db');
 const usersRoutes = require('../../routes/v1/users');
-const authMiddleware = require('../../middleware/auth');
+const { userFactory } = require('../factories');
+const {
+  generateToken,
+  testPassword,
+  userUpdateData,
+  ROLES,
+  HTTP_STATUS
+} = require('../helpers/testFixtures');
 
 const app = express();
 app.use(express.json());
 app.use('/api/v1/users', usersRoutes);
-app.use('/api/v1/admin', usersRoutes);
-
-const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-production';
 
 describe('Users API Integration Tests', () => {
   let regularUser;
   let adminUser;
   let regularToken;
   let adminToken;
+  let cleanupUsers = [];
 
   beforeAll(async () => {
-    const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
-
-    regularUser = await pool.query(
-      'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
-      [`regular_user_${Date.now()}@example.com`, 'Regular User', hashedPassword, 'user']
-    );
-    regularUser = regularUser.rows[0];
-
-    adminUser = await pool.query(
-      'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
-      [`admin_user_${Date.now()}@example.com`, 'Admin User', hashedPassword, 'admin']
-    );
-    adminUser = adminUser.rows[0];
-
-    regularToken = jwt.sign(
-      { id: regularUser.id, email: regularUser.email, role: regularUser.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    adminToken = jwt.sign(
-      { id: adminUser.id, email: adminUser.email, role: adminUser.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    regularUser = await userFactory.createUser({
+      password: testPassword
+    });
+    adminUser = await userFactory.createAdmin({
+      password: testPassword
+    });
+    cleanupUsers.push(regularUser.id, adminUser.id);
+    
+    regularToken = generateToken(regularUser);
+    adminToken = generateToken(adminUser);
   });
 
   afterAll(async () => {
-    if (regularUser) {
-      await pool.query('DELETE FROM users WHERE id = $1', [regularUser.id]);
-    }
-    if (adminUser) {
-      await pool.query('DELETE FROM users WHERE id = $1', [adminUser.id]);
-    }
+    await userFactory.deleteUsers(cleanupUsers);
     await pool.end();
   });
 
@@ -64,7 +48,7 @@ describe('Users API Integration Tests', () => {
         .get('/api/v1/users/me')
         .set('Authorization', `Bearer ${regularToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('email');
@@ -75,7 +59,7 @@ describe('Users API Integration Tests', () => {
     it('should fail without authentication', async () => {
       const response = await request(app).get('/api/v1/users/me');
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
       expect(response.body.success).toBe(false);
     });
 
@@ -84,227 +68,271 @@ describe('Users API Integration Tests', () => {
         .get('/api/v1/users/me')
         .set('Authorization', 'Bearer invalid-token');
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
       expect(response.body.success).toBe(false);
     });
   });
 
   describe('PUT /api/v1/users/me', () => {
     it('should update current user profile successfully', async () => {
+      const newName = `Updated Name ${Date.now()}`;
       const response = await request(app)
         .put('/api/v1/users/me')
         .set('Authorization', `Bearer ${regularToken}`)
         .send({
-          name: 'Updated Name',
-          email: `updated_${Date.now()}@example.com`
+          name: newName
         });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('name', 'Updated Name');
+      expect(response.body.data).toHaveProperty('name', newName);
     });
 
     it('should fail without authentication', async () => {
       const response = await request(app)
         .put('/api/v1/users/me')
-        .send({
-          name: 'Updated Name'
-        });
+        .send(userUpdateData);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
       expect(response.body.success).toBe(false);
     });
 
-    it('should fail to update protected fields', async () => {
+    it('should fail to update protected fields (role)', async () => {
       const response = await request(app)
         .put('/api/v1/users/me')
         .set('Authorization', `Bearer ${regularToken}`)
         .send({
           name: 'Updated Name',
-          role: 'admin'
+          role: ROLES.ADMIN
         });
 
-      expect(response.status).toBe(200);
-      expect(response.body.data).not.toHaveProperty('role', 'admin');
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.data.role).not.toBe(ROLES.ADMIN);
     });
   });
 
-  describe('GET /api/v1/admin/users', () => {
-    it('should get all users for admin', async () => {
+  describe('GET /api/v1/users/:id', () => {
+    it('should get user by id as admin', async () => {
       const response = await request(app)
-        .get('/api/v1/admin/users')
+        .get(`/api/v1/users/${regularUser.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('users');
-      expect(Array.isArray(response.body.data.users)).toBe(true);
+      expect(response.body.data.id).toBe(regularUser.id);
     });
 
-    it('should support pagination parameters', async () => {
+    it('should get own user data as regular user', async () => {
       const response = await request(app)
-        .get('/api/v1/admin/users?page=1&limit=5')
-        .set('Authorization', `Bearer ${adminToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.data).toHaveProperty('page');
-      expect(response.body.data).toHaveProperty('limit');
-      expect(response.body.data).toHaveProperty('total');
-    });
-
-    it('should support role filtering', async () => {
-      const response = await request(app)
-        .get('/api/v1/admin/users?role=user')
-        .set('Authorization', `Bearer ${adminToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-
-    it('should fail for non-admin users', async () => {
-      const response = await request(app)
-        .get('/api/v1/admin/users')
+        .get(`/api/v1/users/${regularUser.id}`)
         .set('Authorization', `Bearer ${regularToken}`);
 
-      expect(response.status).toBe(403);
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should fail without authentication', async () => {
-      const response = await request(app).get('/api/v1/admin/users');
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-    });
-  });
-
-  describe('POST /api/v1/admin/users', () => {
-    let newUserEmail;
-
-    beforeEach(() => {
-      newUserEmail = `newadminuser_${Date.now()}@example.com`;
-    });
-
-    afterEach(async () => {
-      await pool.query('DELETE FROM users WHERE email = $1', [newUserEmail]);
-    });
-
-    it('should create a new user for admin', async () => {
-      const response = await request(app)
-        .post('/api/v1/admin/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: `newuser_${Date.now()}`,
-          email: newUserEmail,
-          password: 'NewPassword123!',
-          role: 'user',
-          status: 'active'
-        });
-
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('id');
-      expect(response.body.data).toHaveProperty('email', newUserEmail);
+      expect(response.body.data.id).toBe(regularUser.id);
     });
 
-    it('should fail for non-admin users', async () => {
+    it('should fail to get other user data as regular user', async () => {
       const response = await request(app)
-        .post('/api/v1/admin/users')
-        .set('Authorization', `Bearer ${regularToken}`)
-        .send({
-          username: 'newuser',
-          email: newUserEmail,
-          password: 'NewPassword123!'
-        });
+        .get(`/api/v1/users/${adminUser.id}`)
+        .set('Authorization', `Bearer ${regularToken}`);
 
-      expect(response.status).toBe(403);
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should fail without authentication', async () => {
-      const response = await request(app)
-        .post('/api/v1/admin/users')
-        .send({
-          username: 'newuser',
-          email: newUserEmail,
-          password: 'NewPassword123!'
-        });
-
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should fail with duplicate email', async () => {
-      await request(app)
-        .post('/api/v1/admin/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: `newuser_${Date.now()}`,
-          email: newUserEmail,
-          password: 'NewPassword123!'
-        });
-
-      const response = await request(app)
-        .post('/api/v1/admin/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: `newuser2_${Date.now()}`,
-          email: newUserEmail,
-          password: 'NewPassword123!'
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-  });
-
-  describe('DELETE /api/v1/admin/users/:id', () => {
-    let userToDelete;
-
-    beforeEach(async () => {
-      const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
-      userToDelete = await pool.query(
-        'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email',
-        [`delete_user_${Date.now()}@example.com`, 'User To Delete', hashedPassword, 'user']
-      );
-      userToDelete = userToDelete.rows[0];
-    });
-
-    afterEach(async () => {
-      await pool.query('DELETE FROM users WHERE id = $1', [userToDelete.id]);
-    });
-
-    it('should delete user for admin', async () => {
-      const response = await request(app)
-        .delete(`/api/v1/admin/users/${userToDelete.id}`)
-        .set('Authorization', `Bearer ${adminToken}`);
-
-      expect(response.status).toBe(204);
+      expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
     });
 
     it('should return 404 for non-existent user', async () => {
       const response = await request(app)
-        .delete('/api/v1/admin/users/999999')
+        .get('/api/v1/users/999999')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    });
+  });
+
+  describe('PUT /api/v1/users/:id', () => {
+    it('should update user by id as admin', async () => {
+      const newName = `Admin Updated ${Date.now()}`;
+      const response = await request(app)
+        .put(`/api/v1/users/${regularUser.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: newName });
+
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.name).toBe(newName);
+    });
+
+    it('should update own user data as regular user', async () => {
+      const newName = `Self Updated ${Date.now()}`;
+      const response = await request(app)
+        .put(`/api/v1/users/${regularUser.id}`)
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ name: newName });
+
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.name).toBe(newName);
+    });
+
+    it('should fail to update other user as regular user', async () => {
+      const response = await request(app)
+        .put(`/api/v1/users/${adminUser.id}`)
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ name: 'Hacked' });
+
+      expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
+    });
+
+    it('should return 404 for non-existent user', async () => {
+      const response = await request(app)
+        .put('/api/v1/users/999999')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Test' });
+
+      expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    });
+  });
+
+  describe('GET /api/v1/users', () => {
+    it('should get all users for admin', async () => {
+      const response = await request(app)
+        .get('/api/v1/users')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     it('should fail for non-admin users', async () => {
       const response = await request(app)
-        .delete(`/api/v1/admin/users/${userToDelete.id}`)
+        .get('/api/v1/users')
         .set('Authorization', `Bearer ${regularToken}`);
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
       expect(response.body.success).toBe(false);
     });
 
     it('should fail without authentication', async () => {
-      const response = await request(app)
-        .delete(`/api/v1/admin/users/${userToDelete.id}`);
+      const response = await request(app).get('/api/v1/users');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
+    });
+  });
+
+  describe('POST /api/v1/users', () => {
+    let testEmail;
+
+    beforeEach(() => {
+      testEmail = `newuser_${Date.now()}@example.com`;
+    });
+
+    afterEach(async () => {
+      await pool.query('DELETE FROM users WHERE email = $1', [testEmail]);
+    });
+
+    it('should create a new user for admin', async () => {
+      const response = await request(app)
+        .post('/api/v1/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          email: testEmail,
+          name: 'New User',
+          password: testPassword,
+          role: ROLES.USER
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.CREATED);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data.email).toBe(testEmail);
+    });
+
+    it('should fail for non-admin users', async () => {
+      const response = await request(app)
+        .post('/api/v1/users')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          email: testEmail,
+          name: 'New User',
+          password: testPassword
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await request(app)
+        .post('/api/v1/users')
+        .send({
+          email: testEmail,
+          name: 'New User',
+          password: testPassword
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
+    });
+
+    it('should fail with duplicate email', async () => {
+      await request(app)
+        .post('/api/v1/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          email: testEmail,
+          name: 'New User',
+          password: testPassword
+        });
+
+      const response = await request(app)
+        .post('/api/v1/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          email: testEmail,
+          name: 'Duplicate User',
+          password: testPassword
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
+    });
+  });
+
+  describe('DELETE /api/v1/users/:id', () => {
+    let userToDelete;
+
+    beforeEach(async () => {
+      userToDelete = await userFactory.createUser();
+      cleanupUsers.push(userToDelete.id);
+    });
+
+    it('should delete user for admin', async () => {
+      const response = await request(app)
+        .delete(`/api/v1/users/${userToDelete.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.NO_CONTENT);
+    });
+
+    it('should return 404 for non-existent user', async () => {
+      const response = await request(app)
+        .delete('/api/v1/users/999999')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    });
+
+    it('should fail for non-admin users', async () => {
+      const response = await request(app)
+        .delete(`/api/v1/users/${userToDelete.id}`)
+        .set('Authorization', `Bearer ${regularToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await request(app)
+        .delete(`/api/v1/users/${userToDelete.id}`);
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
   });
 });

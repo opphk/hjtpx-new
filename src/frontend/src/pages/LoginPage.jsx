@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import LoginForm from '../components/LoginForm';
 import Alert from '../components/ui/Alert';
 
 const LoginPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [error, setError] = useState('');
@@ -19,10 +21,10 @@ const LoginPage = () => {
       if (result.success) {
         navigate('/dashboard');
       } else {
-        setError(result.message || '登录失败');
+        setError(result.message || t('auth.loginFailed'));
       }
     } catch (err) {
-      setError(err.message || '网络错误，请稍后重试');
+      setError(err.message || t('users.networkError'));
     } finally {
       setLoading(false);
     }
@@ -32,8 +34,8 @@ const LoginPage = () => {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <h1>欢迎回来</h1>
-          <p>请登录您的账户</p>
+          <h1>{t('auth.welcomeBack')}</h1>
+          <p>{t('auth.pleaseLogin')}</p>
         </div>
         
         {error && (
@@ -49,7 +51,7 @@ const LoginPage = () => {
         
         <div className="auth-footer">
           <p>
-            还没有账户？ <Link to="/register">立即注册</Link>
+            {t('auth.noAccount')} <Link to="/register">{t('auth.signUpNow')}</Link>
           </p>
         </div>
       </div>

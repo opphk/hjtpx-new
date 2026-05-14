@@ -10,6 +10,8 @@ function Button({
   disabled = false,
   onClick,
   className = '',
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
   ...props
 }) {
   const baseClass = 'btn';
@@ -29,9 +31,13 @@ function Button({
       className={classes}
       onClick={handleClick}
       disabled={disabled || loading}
+      aria-disabled={disabled || loading}
+      aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      aria-busy={loading}
       {...props}
     >
-      {loading ? <Loading size="small" /> : children}
+      {loading ? <Loading size="small" aria-hidden="true" /> : children}
     </button>
   );
 }

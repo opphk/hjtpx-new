@@ -6,7 +6,11 @@ function Alert({
   onClose,
   autoClose = true,
   autoCloseTime = 3000,
-  className = ''
+  className = '',
+  role,
+  'aria-label': ariaLabel,
+  'aria-live': ariaLive,
+  ...props
 }) {
   useEffect(() => {
     if (autoClose && autoCloseTime > 0) {
@@ -21,9 +25,19 @@ function Alert({
   }, [autoClose, autoCloseTime, onClose]);
 
   const alertClass = `alert alert-${type} ${className}`.trim();
+  
+  const defaultAriaLive = type === 'error' || type === 'warning' ? 'assertive' : 'polite';
+  const defaultRole = type === 'error' || type === 'warning' ? 'alert' : 'status';
 
   return (
-    <div className={alertClass} role="alert">
+    <div 
+      className={alertClass} 
+      role={role || defaultRole}
+      aria-label={ariaLabel}
+      aria-live={ariaLive || defaultAriaLive}
+      aria-atomic="true"
+      {...props}
+    >
       <div className="alert-content">
         <span className="alert-message">{message}</span>
         {onClose && (
@@ -31,7 +45,7 @@ function Alert({
             type="button"
             className="alert-close"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="关闭提示"
           >
             &times;
           </button>

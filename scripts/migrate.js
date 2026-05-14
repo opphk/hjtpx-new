@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const DB_HOST = process.env.DB_HOST || 'localhost';
@@ -12,234 +13,434 @@ const DB_PASSWORD = process.env.DB_PASSWORD || 'postgres';
 const MIGRATIONS_TABLE = 'migrations';
 const MIGRATIONS_DIR = path.join(__dirname, '../migrations');
 
+/**
+ * Calculate checksum of a file for integrity verification
+ */
+function calculateChecksum(filePath) {
+  const fileContent = fs.readFileSync(filePath, 'utf8');
+  return crypto.createHash('sha256').update(fileContent).digest('hex');
+}
+
+/**
+ * Parse migration file name to extract version and name
+ */
+function parseMigrationFileName(fileName) {
+  const match = fileName.match(/^(\d+)_([^.]+)\.(up|down)\.sql$/);
+  if (!match) return null;
+  return {
+    version: parseInt(match[1], 10),
+    name: match[2],
+    type: match[3]
+  };
+}
+
+/**
+ * Get all migration files sorted by version
+ */
+function getMigrationFiles() {
+  const files = fs.readdirSync(MIGRATIONS_DIR)
+    .filter(f => f.endsWith('.sql'))
+    .map(f => ({
+      fileName: f,
+      parsed: parseMigrationFileName(f)
+    }))
+    .filter(f => f.parsed !== null)
+    .sort((a, b) => a.parsed.version - b.parsed.version);
+  
+  return files;
+}
+
+/**
+ * Group migration files by version
+ */
+function groupMigrationsByVersion(files) {
+  const grouped = new Map();
+  files.forEach(({ fileName, parsed }) => {
+    if (!grouped.has(parsed.version)) {
+      grouped.set(parsed.version, {
+        version: parsed.version,
+        name: parsed.name,
+        up: null,
+        down: null
+      });
+    }
+    const migration = grouped.get(parsed.version);
+    if (parsed.type === 'up') {
+      migration.up = fileName;
+    } else {
+      migration.down = fileName;
+    }
+  });
+  return Array.from(grouped.values()).sort((a, b) => a.version - b.version);
+}
+
+/**
+ * Create migrations table if it doesn't exist
+ */
 async function createMigrationsTable(pool) {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE} (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(255) NOT NULL UNIQUE,
-      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      version INTEGER NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      type VARCHAR(20) NOT NULL DEFAULT 'up',
+      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      execution_time_ms INTEGER,
+      status VARCHAR(20) DEFAULT 'success',
+      checksum VARCHAR(64),
+      error_message TEXT
     )
   `);
 }
 
+/**
+ * Get all applied migrations from the database
+ */
 async function getAppliedMigrations(pool) {
   const result = await pool.query(
-    `SELECT name FROM ${MIGRATIONS_TABLE} ORDER BY applied_at ASC`
+    `SELECT version, name, type, applied_at, status, checksum FROM ${MIGRATIONS_TABLE} ORDER BY version ASC`
   );
-  return result.rows.map(row => row.name);
+  return result.rows;
 }
 
-async function getPendingMigrations(pool) {
-  const applied = await getAppliedMigrations(pool);
-  const files = fs.readdirSync(MIGRATIONS_DIR)
-    .filter(f => f.endsWith('.sql'))
-    .sort();
-
-  return files.filter(file => !applied.includes(file));
+/**
+ * Get current database version
+ */
+async function getCurrentVersion(pool) {
+  const result = await pool.query(
+    `SELECT version FROM ${MIGRATIONS_TABLE} WHERE type = 'up' AND status = 'success' ORDER BY version DESC LIMIT 1`
+  );
+  return result.rows.length > 0 ? result.rows[0].version : 0;
 }
 
-async function recordMigration(pool, name) {
+/**
+ * Record a migration in the database
+ */
+async function recordMigration(pool, { version, name, type, executionTime, status, checksum, errorMessage }) {
   await pool.query(
-    `INSERT INTO ${MIGRATIONS_TABLE} (name) VALUES ($1)`,
-    [name]
+    `INSERT INTO ${MIGRATIONS_TABLE} (version, name, type, execution_time_ms, status, checksum, error_message)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (version) DO UPDATE SET
+       type = EXCLUDED.type,
+       applied_at = CURRENT_TIMESTAMP,
+       execution_time_ms = EXCLUDED.execution_time_ms,
+       status = EXCLUDED.status,
+       checksum = EXCLUDED.checksum,
+       error_message = EXCLUDED.error_message`,
+    [version, name, type, executionTime, status, checksum, errorMessage]
   );
 }
 
-async function removeMigrationRecord(pool, name) {
-  await pool.query(
-    `DELETE FROM ${MIGRATIONS_TABLE} WHERE name = $1`,
-    [name]
-  );
-}
-
-async function migrate(options = {}) {
-  const pool = new Pool({
-    host: DB_HOST,
-    port: DB_PORT,
-    database: DB_NAME,
-    user: DB_USER,
-    password: DB_PASSWORD,
-  });
-
+/**
+ * Execute a SQL file
+ */
+async function executeSqlFile(pool, filePath) {
+  const sql = fs.readFileSync(filePath, 'utf8');
+  
+  const client = await pool.connect();
   try {
-    await createMigrationsTable(pool);
-
-    if (options.rollback) {
-      const applied = await getAppliedMigrations(pool);
-      if (applied.length === 0) {
-        console.log('No migrations to rollback');
-        return;
-      }
-
-      const lastMigration = applied[applied.length - 1];
-      console.log(`Rolling back migration: ${lastMigration}`);
-
-      const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, lastMigration), 'utf8');
-      const statements = sql.split(';').filter(s => s.trim());
-
-      await pool.query('BEGIN');
-      try {
-        for (const statement of statements.reverse()) {
-          const rollbackStatement = generateRollbackStatement(statement.trim());
-          if (rollbackStatement) {
-            await pool.query(rollbackStatement);
-          }
-        }
-        await removeMigrationRecord(pool, lastMigration);
-        await pool.query('COMMIT');
-        console.log(`Rollback of ${lastMigration} completed`);
-      } catch (error) {
-        await pool.query('ROLLBACK');
-        throw error;
-      }
-    } else {
-      const pending = await getPendingMigrations(pool);
-
-      if (pending.length === 0) {
-        console.log('No pending migrations');
-        return;
-      }
-
-      console.log(`Found ${pending.length} pending migration(s)`);
-
-      for (const file of pending) {
-        console.log(`Applying migration: ${file}`);
-        const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
-
-        await pool.query('BEGIN');
-        try {
-          await pool.query(sql);
-          await recordMigration(pool, file);
-          await pool.query('COMMIT');
-          console.log(`Migration ${file} applied successfully`);
-        } catch (error) {
-          await pool.query('ROLLBACK');
-          throw error;
-        }
-      }
-    }
+    await client.query('BEGIN');
+    const startTime = Date.now();
+    await client.query(sql);
+    const executionTime = Date.now() - startTime;
+    await client.query('COMMIT');
+    return { success: true, executionTime };
   } catch (error) {
-    console.error('Migration error:', error.message);
+    await client.query('ROLLBACK');
     throw error;
   } finally {
-    await pool.end();
+    client.release();
   }
 }
 
-function generateRollbackStatement(statement) {
-  if (statement.toUpperCase().startsWith('CREATE TABLE')) {
-    const tableName = statement.match(/CREATE TABLE (?:\s+)?(\w+)/i);
-    if (tableName) {
-      return `DROP TABLE IF EXISTS ${tableName[1]}`;
+/**
+ * Apply pending migrations
+ */
+async function migrateUp(pool, targetVersion = null) {
+  const migrations = groupMigrationsByVersion(getMigrationFiles());
+  const appliedMigrations = await getAppliedMigrations(pool);
+  const currentVersion = await getCurrentVersion(pool);
+  
+  const appliedVersions = new Set(appliedMigrations.filter(m => m.type === 'up' && m.status === 'success').map(m => m.version));
+  
+  const pendingMigrations = migrations.filter(m => 
+    !appliedVersions.has(m.version) && 
+    (targetVersion === null || m.version <= targetVersion) &&
+    m.version > currentVersion
+  );
+  
+  if (pendingMigrations.length === 0) {
+    console.log('No pending migrations');
+    return;
+  }
+  
+  console.log(`Found ${pendingMigrations.length} pending migration(s)`);
+  
+  for (const migration of pendingMigrations) {
+    if (!migration.up) {
+      console.warn(`Skipping migration ${migration.version} - no up script found`);
+      continue;
+    }
+    
+    console.log(`Applying migration ${migration.version}: ${migration.name}`);
+    const filePath = path.join(MIGRATIONS_DIR, migration.up);
+    const checksum = calculateChecksum(filePath);
+    
+    try {
+      const result = await executeSqlFile(pool, filePath);
+      await recordMigration(pool, {
+        version: migration.version,
+        name: migration.name,
+        type: 'up',
+        executionTime: result.executionTime,
+        status: 'success',
+        checksum,
+        errorMessage: null
+      });
+      console.log(`✓ Migration ${migration.version} applied successfully (${result.executionTime}ms)`);
+    } catch (error) {
+      await recordMigration(pool, {
+        version: migration.version,
+        name: migration.name,
+        type: 'up',
+        executionTime: 0,
+        status: 'failed',
+        checksum,
+        errorMessage: error.message
+      });
+      console.error(`✗ Migration ${migration.version} failed:`, error.message);
+      throw error;
     }
   }
+}
 
-  if (statement.toUpperCase().startsWith('CREATE INDEX')) {
-    const indexName = statement.match(/CREATE INDEX (?:\s+)?\w+ (?:\s+)?ON/i);
-    if (indexName) {
-      const match = statement.match(/CREATE INDEX (?:\s+)?(\w+)/i);
-      if (match) {
-        return `DROP INDEX IF EXISTS ${match[1]}`;
+/**
+ * Rollback migrations
+ */
+async function migrateDown(pool, targetVersion = null, steps = 1) {
+  const appliedMigrations = await getAppliedMigrations(pool);
+  const successfulUpMigrations = appliedMigrations
+    .filter(m => m.type === 'up' && m.status === 'success')
+    .sort((a, b) => b.version - a.version);
+  
+  if (successfulUpMigrations.length === 0) {
+    console.log('No migrations to rollback');
+    return;
+  }
+  
+  const migrations = groupMigrationsByVersion(getMigrationFiles());
+  const migrationsMap = new Map(migrations.map(m => [m.version, m]));
+  
+  let migrationsToRollback;
+  if (targetVersion !== null) {
+    migrationsToRollback = successfulUpMigrations.filter(m => m.version > targetVersion);
+  } else {
+    migrationsToRollback = successfulUpMigrations.slice(0, steps);
+  }
+  
+  if (migrationsToRollback.length === 0) {
+    console.log('No migrations to rollback');
+    return;
+  }
+  
+  console.log(`Rolling back ${migrationsToRollback.length} migration(s)`);
+  
+  for (const appliedMigration of migrationsToRollback) {
+    const migration = migrationsMap.get(appliedMigration.version);
+    if (!migration || !migration.down) {
+      console.warn(`Skipping rollback of ${appliedMigration.version} - no down script found`);
+      continue;
+    }
+    
+    console.log(`Rolling back migration ${migration.version}: ${migration.name}`);
+    const filePath = path.join(MIGRATIONS_DIR, migration.down);
+    const checksum = calculateChecksum(filePath);
+    
+    try {
+      const result = await executeSqlFile(pool, filePath);
+      await recordMigration(pool, {
+        version: migration.version,
+        name: migration.name,
+        type: 'down',
+        executionTime: result.executionTime,
+        status: 'success',
+        checksum,
+        errorMessage: null
+      });
+      console.log(`✓ Rollback of ${migration.version} completed (${result.executionTime}ms)`);
+    } catch (error) {
+      await recordMigration(pool, {
+        version: migration.version,
+        name: migration.name,
+        type: 'down',
+        executionTime: 0,
+        status: 'failed',
+        checksum,
+        errorMessage: error.message
+      });
+      console.error(`✗ Rollback of ${migration.version} failed:`, error.message);
+      throw error;
+    }
+  }
+}
+
+/**
+ * Show migration status
+ */
+async function showStatus(pool) {
+  const migrations = groupMigrationsByVersion(getMigrationFiles());
+  const appliedMigrations = await getAppliedMigrations(pool);
+  const appliedMap = new Map(appliedMigrations.map(m => [m.version, m]));
+  const currentVersion = await getCurrentVersion(pool);
+  
+  console.log('\n=== Migration Status ===');
+  console.log(`Current version: ${currentVersion}`);
+  console.log(`Total migrations: ${migrations.length}`);
+  console.log('\nMigration history:');
+  
+  migrations.forEach(migration => {
+    const applied = appliedMap.get(migration.version);
+    let status = 'pending';
+    let appliedAt = '';
+    
+    if (applied) {
+      if (applied.type === 'up' && applied.status === 'success') {
+        status = 'applied';
+        appliedAt = applied.applied_at;
+      } else if (applied.type === 'down' && applied.status === 'success') {
+        status = 'rolled back';
+      } else if (applied.status === 'failed') {
+        status = `failed: ${applied.error_message}`;
       }
     }
-  }
-
-  if (statement.toUpperCase().startsWith('ALTER TABLE')) {
-    const alterMatch = statement.match(/ALTER TABLE (\w+) ADD COLUMN (\w+)/i);
-    if (alterMatch) {
-      return `ALTER TABLE ${alterMatch[1]} DROP COLUMN ${alterMatch[2]}`;
-    }
-  }
-
-  return null;
-}
-
-async function status() {
-  const pool = new Pool({
-    host: DB_HOST,
-    port: DB_PORT,
-    database: DB_NAME,
-    user: DB_USER,
-    password: DB_PASSWORD,
+    
+    const statusIcon = status === 'applied' ? '✓' : status === 'pending' ? '○' : '✗';
+    console.log(`  ${statusIcon} ${migration.version.toString().padStart(3)}: ${migration.name.padEnd(25)} ${status}${appliedAt ? ` (${appliedAt})` : ''}`);
   });
-
-  try {
-    await createMigrationsTable(pool);
-    const applied = await getAppliedMigrations(pool);
-    const pending = await getPendingMigrations(pool);
-
-    console.log('\n=== Migration Status ===');
-    console.log(`Applied: ${applied.length}`);
-    console.log(`Pending: ${pending.length}`);
-    console.log('\nApplied migrations:');
-    applied.forEach(m => console.log(`  ✓ ${m}`));
-    console.log('\nPending migrations:');
-    pending.forEach(m => console.log(`  ○ ${m}`));
-    console.log('========================\n');
-  } catch (error) {
-    console.error('Error getting migration status:', error.message);
-    throw error;
-  } finally {
-    await pool.end();
-  }
+  
+  console.log('========================\n');
 }
 
-async function create(name) {
-  const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
-  const filename = `${timestamp}_${name}.sql`;
-  const filepath = path.join(MIGRATIONS_DIR, filename);
+/**
+ * Create a new migration
+ */
+async function createMigration(name) {
+  const migrations = groupMigrationsByVersion(getMigrationFiles());
+  const nextVersion = migrations.length > 0 ? migrations[migrations.length - 1].version + 1 : 1;
+  const timestamp = new Date().toISOString().split('T')[0];
+  
+  const upFileName = `${nextVersion.toString().padStart(3, '0')}_${name}.up.sql`;
+  const downFileName = `${nextVersion.toString().padStart(3, '0')}_${name}.down.sql`;
+  
+  const upContent = `-- Migration: ${name}
+-- Created: ${timestamp}
+-- Description: [Add description here]
 
-  const template = `-- Migration: ${name}
--- Created: ${new Date().toISOString()}
-
--- TODO: Write migration SQL here
+-- Write your migration SQL here
 
 `;
+  
+  const downContent = `-- Rollback: ${name}
+-- Description: [Add rollback description here]
 
-  fs.writeFileSync(filepath, template);
-  console.log(`Created migration: ${filename}`);
+-- Write your rollback SQL here
+
+`;
+  
+  fs.writeFileSync(path.join(MIGRATIONS_DIR, upFileName), upContent);
+  fs.writeFileSync(path.join(MIGRATIONS_DIR, downFileName), downContent);
+  
+  console.log(`Created migration ${nextVersion}: ${name}`);
+  console.log(`  Up: ${upFileName}`);
+  console.log(`  Down: ${downFileName}`);
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const command = args[0];
+/**
+ * Main function
+ */
+async function main() {
+  const pool = new Pool({
+    host: DB_HOST,
+    port: DB_PORT,
+    database: DB_NAME,
+    user: DB_USER,
+    password: DB_PASSWORD,
+  });
+  
+  try {
+    await createMigrationsTable(pool);
+    
+    const args = process.argv.slice(2);
+    const command = args[0];
+    
+    switch (command) {
+      case 'up':
+        const targetVersionUp = args[1] ? parseInt(args[1], 10) : null;
+        await migrateUp(pool, targetVersionUp);
+        break;
+        
+      case 'down':
+        if (args[1] === '--to' && args[2]) {
+          await migrateDown(pool, parseInt(args[2], 10));
+        } else if (args[1]) {
+          await migrateDown(pool, null, parseInt(args[1], 10));
+        } else {
+          await migrateDown(pool);
+        }
+        break;
+        
+      case 'status':
+        await showStatus(pool);
+        break;
+        
+      case 'create':
+        if (args[1]) {
+          await createMigration(args[1]);
+        } else {
+          console.error('Please provide a migration name');
+          process.exit(1);
+        }
+        break;
+        
+      default:
+        console.log(`
+Usage: node migrate.js <command> [options]
 
-  switch (command) {
-    case 'up':
-      migrate({ rollback: false })
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
-      break;
-    case 'down':
-      migrate({ rollback: true })
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
-      break;
-    case 'status':
-      status()
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
-      break;
-    case 'create':
-      if (args[1]) {
-        create(args[1]);
-      } else {
-        console.error('Please provide a migration name');
+Commands:
+  up [version]          Apply pending migrations (optionally up to a specific version)
+  down [steps]          Rollback last [steps] migrations (default: 1)
+  down --to <version>   Rollback down to a specific version
+  status                Show migration status
+  create <name>         Create a new migration
+
+Examples:
+  node migrate.js up
+  node migrate.js up 5
+  node migrate.js down
+  node migrate.js down 3
+  node migrate.js down --to 2
+  node migrate.js status
+  node migrate.js create add_users_table
+`);
         process.exit(1);
-      }
-      break;
-    default:
-      console.log('Usage: node migrate.js [up|down|status|create <name>]');
-      process.exit(1);
+    }
+  } finally {
+    await pool.end();
   }
 }
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    console.error('Migration error:', error);
+    process.exit(1);
+  });
 }
 
 module.exports = {
-  migrate,
-  status,
-  create,
+  migrateUp,
+  migrateDown,
+  showStatus,
+  createMigration,
+  getMigrationFiles,
+  getCurrentVersion
 };

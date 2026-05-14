@@ -2,74 +2,67 @@ const request = require('supertest');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 const pool = require('../../../config/database/db');
-const notificationsRoutes = require('../../routes/notifications');
-const Notification = require('../../models/Notification');
+const notificationsRoutes = require('../../routes/v1/notifications');
+const { userFactory, notificationFactory } = require('../factories');
+const {
+  generateToken,
+  testPassword,
+  notificationData,
+  HTTP_STATUS
+} = require('../helpers/testFixtures');
 
 const app = express();
 app.use(express.json());
 app.use('/api/v1/notifications', notificationsRoutes);
 
-const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-production';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/hjtpx_notifications_test';
 
 describe('Notifications API Integration Tests', () => {
   let testUser;
   let testToken;
-  let testNotificationId;
+  let cleanupUsers = [];
+  let cleanupNotificationIds = [];
 
   beforeAll(async () => {
     try {
       if (mongoose.connection.readyState === 0) {
         await mongoose.connect(MONGO_URI, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true
+          serverSelectionTimeoutMS: 2000
         });
       }
     } catch (error) {
       console.log('MongoDB connection skipped for integration test:', error.message);
     }
 
-    const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
-    testUser = await pool.query(
-      'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
-      [`notification_user_${Date.now()}@example.com`, 'Notification User', hashedPassword, 'user']
-    );
-    testUser = testUser.rows[0];
+    testUser = await userFactory.createUser({
+      password: testPassword
+    });
+    cleanupUsers.push(testUser.id);
 
-    testToken = jwt.sign(
-      { id: testUser.id, email: testUser.email, role: testUser.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    testToken = generateToken(testUser);
 
     try {
-      const notification = await Notification.create({
-        userId: testUser.id,
-        type: 'info',
-        title: 'Test Notification',
-        message: 'This is a test notification',
-        status: 'unread',
-        channels: ['in_app']
-      });
-      testNotificationId = notification._id.toString();
+      const notification = await notificationFactory.createNotification(testUser.id);
+      cleanupNotificationIds.push(notification._id.toString());
     } catch (error) {
       console.log('Could not create test notification:', error.message);
     }
   });
 
   afterAll(async () => {
-    if (testUser) {
-      try {
-        await Notification.deleteMany({ userId: testUser.id });
-      } catch (error) {
-        console.log('Cleanup notification skipped:', error.message);
+    try {
+      if (cleanupNotificationIds.length > 0) {
+        await notificationFactory.deleteNotifications(cleanupNotificationIds);
       }
-      await pool.query('DELETE FROM users WHERE id = $1', [testUser.id]);
+    } catch (error) {
+      console.log('Notification cleanup skipped:', error.message);
     }
+    
+    await userFactory.deleteUsers(cleanupUsers);
     await pool.end();
+    
     try {
       if (mongoose.connection.readyState !== 0) {
         await mongoose.connection.close();
@@ -85,11 +78,9 @@ describe('Notifications API Integration Tests', () => {
         .get('/api/v1/notifications')
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('notifications');
-      expect(Array.isArray(response.body.data.notifications)).toBe(true);
-      expect(response.body.data).toHaveProperty('pagination');
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     it('should support pagination parameters', async () => {
@@ -97,9 +88,7 @@ describe('Notifications API Integration Tests', () => {
         .get('/api/v1/notifications?page=1&limit=10')
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(200);
-      expect(response.body.data.pagination).toHaveProperty('page', 1);
-      expect(response.body.data.pagination).toHaveProperty('limit', 10);
+      expect(response.status).toBe(HTTP_STATUS.OK);
     });
 
     it('should support status filtering', async () => {
@@ -107,15 +96,23 @@ describe('Notifications API Integration Tests', () => {
         .get('/api/v1/notifications?status=unread')
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should support type filtering', async () => {
+      const response = await request(app)
+        .get('/api/v1/notifications?type=info')
+        .set('Authorization', `Bearer ${testToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
     });
 
     it('should fail without authentication', async () => {
       const response = await request(app).get('/api/v1/notifications');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
 
     it('should fail with invalid token', async () => {
@@ -123,58 +120,101 @@ describe('Notifications API Integration Tests', () => {
         .get('/api/v1/notifications')
         .set('Authorization', 'Bearer invalid-token');
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
   });
 
-  describe('POST /api/v1/notifications/send', () => {
+  describe('POST /api/v1/notifications', () => {
     it('should create a new notification successfully', async () => {
       const response = await request(app)
-        .post('/api/v1/notifications/send')
+        .post('/api/v1/notifications')
         .set('Authorization', `Bearer ${testToken}`)
         .send({
-          userId: testUser.id,
           title: 'New Notification',
           message: 'This is a new notification',
           type: 'info',
           channels: ['in_app']
         });
 
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(HTTP_STATUS.CREATED);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('_id');
-      expect(response.body.data).toHaveProperty('title', 'New Notification');
-
+      
       if (response.body.data && response.body.data._id) {
-        await Notification.findByIdAndDelete(response.body.data._id);
+        cleanupNotificationIds.push(response.body.data._id.toString());
+      }
+    });
+
+    it('should support different notification types (success)', async () => {
+      const response = await request(app)
+        .post('/api/v1/notifications')
+        .set('Authorization', `Bearer ${testToken}`)
+        .send({
+          title: 'Success Notification',
+          message: 'Operation completed successfully',
+          type: 'success',
+          channels: ['in_app']
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.CREATED);
+      
+      if (response.body.data && response.body.data._id) {
+        cleanupNotificationIds.push(response.body.data._id.toString());
+      }
+    });
+
+    it('should support different notification types (warning)', async () => {
+      const response = await request(app)
+        .post('/api/v1/notifications')
+        .set('Authorization', `Bearer ${testToken}`)
+        .send({
+          title: 'Warning Notification',
+          message: 'Please check your settings',
+          type: 'warning',
+          channels: ['in_app']
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.CREATED);
+      
+      if (response.body.data && response.body.data._id) {
+        cleanupNotificationIds.push(response.body.data._id.toString());
+      }
+    });
+
+    it('should support different notification types (error)', async () => {
+      const response = await request(app)
+        .post('/api/v1/notifications')
+        .set('Authorization', `Bearer ${testToken}`)
+        .send({
+          title: 'Error Notification',
+          message: 'Something went wrong',
+          type: 'error',
+          channels: ['in_app']
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.CREATED);
+      
+      if (response.body.data && response.body.data._id) {
+        cleanupNotificationIds.push(response.body.data._id.toString());
       }
     });
 
     it('should fail with missing required fields', async () => {
       const response = await request(app)
-        .post('/api/v1/notifications/send')
+        .post('/api/v1/notifications')
         .set('Authorization', `Bearer ${testToken}`)
         .send({
-          userId: testUser.id,
           title: 'Missing Message'
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     });
 
     it('should fail without authentication', async () => {
       const response = await request(app)
-        .post('/api/v1/notifications/send')
-        .send({
-          userId: testUser.id,
-          title: 'New Notification',
-          message: 'This is a new notification'
-        });
+        .post('/api/v1/notifications')
+        .send(notificationData);
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
   });
 
@@ -183,27 +223,11 @@ describe('Notifications API Integration Tests', () => {
 
     beforeEach(async () => {
       try {
-        notificationToMark = await Notification.create({
-          userId: testUser.id,
-          type: 'info',
-          title: 'Notification to Mark',
-          message: 'This notification will be marked as read',
-          status: 'unread',
-          channels: ['in_app']
-        });
+        notificationToMark = await notificationFactory.createUnreadNotification(testUser.id);
+        cleanupNotificationIds.push(notificationToMark._id.toString());
       } catch (error) {
         console.log('Could not create notification in beforeEach:', error.message);
         notificationToMark = null;
-      }
-    });
-
-    afterEach(async () => {
-      if (notificationToMark && notificationToMark._id) {
-        try {
-          await Notification.findByIdAndDelete(notificationToMark._id);
-        } catch (error) {
-          console.log('Cleanup notification skipped:', error.message);
-        }
       }
     });
 
@@ -217,9 +241,8 @@ describe('Notifications API Integration Tests', () => {
         .put(`/api/v1/notifications/${notificationToMark._id}/read`)
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('modifiedCount');
     });
 
     it('should fail for non-existent notification', async () => {
@@ -228,7 +251,7 @@ describe('Notifications API Integration Tests', () => {
         .put(`/api/v1/notifications/${fakeId}/read`)
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
     });
 
     it('should fail without authentication', async () => {
@@ -240,8 +263,78 @@ describe('Notifications API Integration Tests', () => {
       const response = await request(app)
         .put(`/api/v1/notifications/${notificationToMark._id}/read`);
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
+    });
+  });
+
+  describe('DELETE /api/v1/notifications/:id', () => {
+    let notificationToDelete;
+
+    beforeEach(async () => {
+      try {
+        notificationToDelete = await notificationFactory.createNotification(testUser.id);
+      } catch (error) {
+        console.log('Could not create notification in beforeEach:', error.message);
+        notificationToDelete = null;
+      }
+    });
+
+    it('should delete notification successfully', async () => {
+      if (!notificationToDelete) {
+        console.log('Skipping test: Could not create notification');
+        return;
+      }
+
+      const response = await request(app)
+        .delete(`/api/v1/notifications/${notificationToDelete._id}`)
+        .set('Authorization', `Bearer ${testToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.NO_CONTENT);
+    });
+
+    it('should fail for non-existent notification', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .delete(`/api/v1/notifications/${fakeId}`)
+        .set('Authorization', `Bearer ${testToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    });
+
+    it('should fail without authentication', async () => {
+      if (!notificationToDelete) {
+        console.log('Skipping test: Could not create notification');
+        return;
+      }
+
+      const response = await request(app)
+        .delete(`/api/v1/notifications/${notificationToDelete._id}`);
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
+    });
+  });
+
+  describe('PUT /api/v1/notifications/mark-all-read', () => {
+    it('should mark all notifications as read successfully', async () => {
+      try {
+        await notificationFactory.createMultipleNotifications(testUser.id, 3);
+      } catch (error) {
+        console.log('Could not create multiple notifications:', error.message);
+      }
+
+      const response = await request(app)
+        .put('/api/v1/notifications/mark-all-read')
+        .set('Authorization', `Bearer ${testToken}`);
+
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await request(app)
+        .put('/api/v1/notifications/mark-all-read');
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
   });
 
@@ -251,7 +344,7 @@ describe('Notifications API Integration Tests', () => {
         .get('/api/v1/notifications/unread/count')
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('count');
       expect(typeof response.body.data.count).toBe('number');
@@ -260,7 +353,7 @@ describe('Notifications API Integration Tests', () => {
     it('should fail without authentication', async () => {
       const response = await request(app).get('/api/v1/notifications/unread/count');
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
   });
 });

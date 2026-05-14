@@ -5,6 +5,18 @@ const jwt = require('jsonwebtoken');
 
 const pool = require('../../../config/database/db');
 const authRoutes = require('../../routes/v1/auth');
+const { userFactory } = require('../factories');
+const {
+  generateToken,
+  testPassword,
+  validUserCredentials,
+  invalidUserCredentials,
+  validRegistrationData,
+  invalidEmailFormat,
+  weakPasswordData,
+  ROLES,
+  HTTP_STATUS
+} = require('../helpers/testFixtures');
 
 const app = express();
 app.use(express.json());
@@ -15,26 +27,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-product
 describe('Auth API Integration Tests', () => {
   let testUser;
   let testToken;
+  let cleanupUsers = [];
 
   beforeAll(async () => {
-    const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
-    testUser = await pool.query(
-      'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
-      [`integration_test_${Date.now()}@example.com`, 'Test User', hashedPassword, 'user']
-    );
-    testUser = testUser.rows[0];
-
-    testToken = jwt.sign(
-      { id: testUser.id, email: testUser.email, role: testUser.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    testUser = await userFactory.createUser({
+      password: testPassword
+    });
+    cleanupUsers.push(testUser.id);
+    testToken = generateToken(testUser);
   });
 
   afterAll(async () => {
-    if (testUser) {
-      await pool.query('DELETE FROM users WHERE id = $1', [testUser.id]);
-    }
+    await userFactory.deleteUsers(cleanupUsers);
     await pool.end();
   });
 
@@ -46,10 +50,10 @@ describe('Auth API Integration Tests', () => {
         .send({
           email: uniqueEmail,
           name: 'New Test User',
-          password: 'TestPassword123!'
+          password: testPassword
         });
 
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(HTTP_STATUS.CREATED);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('user');
       expect(response.body.data).toHaveProperty('token');
@@ -61,13 +65,9 @@ describe('Auth API Integration Tests', () => {
     it('should fail with invalid email format', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
-        .send({
-          email: 'invalid-email',
-          name: 'Test User',
-          password: 'TestPassword123!'
-        });
+        .send(invalidEmailFormat);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
       expect(response.body.success).toBe(false);
     });
 
@@ -75,12 +75,11 @@ describe('Auth API Integration Tests', () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
-          email: `weakpass_${Date.now()}@example.com`,
-          name: 'Test User',
-          password: '123'
+          ...weakPasswordData,
+          email: `weakpass_${Date.now()}@example.com`
         });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
       expect(response.body.success).toBe(false);
     });
 
@@ -90,11 +89,21 @@ describe('Auth API Integration Tests', () => {
         .send({
           email: testUser.email,
           name: 'Duplicate User',
-          password: 'TestPassword123!'
+          password: testPassword
         });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
       expect(response.body.success).toBe(false);
+    });
+
+    it('should fail with missing required fields', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          email: `missing_${Date.now()}@example.com`
+        });
+
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     });
   });
 
@@ -104,10 +113,10 @@ describe('Auth API Integration Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: testUser.email,
-          password: 'TestPassword123!'
+          password: testPassword
         });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('user');
       expect(response.body.data).toHaveProperty('token');
@@ -122,19 +131,16 @@ describe('Auth API Integration Tests', () => {
           password: 'WrongPassword123!'
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
       expect(response.body.success).toBe(false);
     });
 
     it('should fail with non-existent email', async () => {
       const response = await request(app)
         .post('/api/v1/auth/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: 'TestPassword123!'
-        });
+        .send(invalidUserCredentials);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
       expect(response.body.success).toBe(false);
     });
 
@@ -143,16 +149,67 @@ describe('Auth API Integration Tests', () => {
         .post('/api/v1/auth/login')
         .send({});
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
       expect(response.body.success).toBe(false);
+    });
+
+    it('should fail with empty email', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: '', password: testPassword });
+
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
+    });
+
+    it('should fail with empty password', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: testUser.email, password: '' });
+
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     });
   });
 
-  describe('GET /api/v1/auth/me', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).get('/api/v1/auth/me');
+  describe('POST /api/v1/auth/verify', () => {
+    it('should verify valid token successfully', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/verify')
+        .send({ token: testToken });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.valid).toBe(true);
+      expect(response.body.data.user).toHaveProperty('id');
+    });
+
+    it('should fail with invalid token', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/verify')
+        .send({ token: 'invalid-token' });
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should fail with expired token', async () => {
+      const expiredToken = jwt.sign(
+        { id: testUser.id, email: testUser.email },
+        JWT_SECRET,
+        { expiresIn: '-1h' }
+      );
+      const response = await request(app)
+        .post('/api/v1/auth/verify')
+        .send({ token: expiredToken });
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
+    });
+
+    it('should fail without token', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/verify')
+        .send({});
+
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     });
   });
 
@@ -162,9 +219,10 @@ describe('Auth API Integration Tests', () => {
         .post('/api/v1/auth/refresh')
         .send({ token: testToken });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('token');
+      expect(response.body.data.token).not.toBe(testToken);
     });
 
     it('should fail with invalid token', async () => {
@@ -172,8 +230,21 @@ describe('Auth API Integration Tests', () => {
         .post('/api/v1/auth/refresh')
         .send({ token: 'invalid-token' });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
       expect(response.body.success).toBe(false);
+    });
+
+    it('should fail with expired token', async () => {
+      const expiredToken = jwt.sign(
+        { id: testUser.id, email: testUser.email },
+        JWT_SECRET,
+        { expiresIn: '-1h' }
+      );
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ token: expiredToken });
+
+      expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     });
 
     it('should fail without token', async () => {
@@ -181,7 +252,7 @@ describe('Auth API Integration Tests', () => {
         .post('/api/v1/auth/refresh')
         .send({});
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
       expect(response.body.success).toBe(false);
     });
   });
@@ -192,9 +263,16 @@ describe('Auth API Integration Tests', () => {
         .post('/api/v1/auth/logout')
         .set('Authorization', `Bearer ${testToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toContain('Logout');
+    });
+
+    it('should logout successfully even without token', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/logout');
+
+      expect(response.status).toBe(HTTP_STATUS.OK);
     });
   });
 });

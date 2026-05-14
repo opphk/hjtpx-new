@@ -8,7 +8,9 @@ function Table({
   totalPages = 1,
   onPageChange,
   sortable = false,
-  className = ''
+  className = '',
+  'aria-label': ariaLabel,
+  caption
 }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
@@ -21,6 +23,13 @@ function Table({
     } else {
       setSortColumn(columnKey);
       setSortDirection('asc');
+    }
+  };
+
+  const handleSortKeyDown = (e, columnKey) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleSort(columnKey);
     }
   };
 
@@ -41,18 +50,32 @@ function Table({
 
   return (
     <div className={tableClass}>
-      <table className="table">
-        <thead>
-          <tr>
+      <table 
+        className="table"
+        role="grid"
+        aria-label={ariaLabel}
+      >
+        {caption && (
+          <caption className="visually-hidden">{caption}</caption>
+        )}
+        <thead role="rowgroup">
+          <tr role="row">
             {columns.map((column) => (
               <th
                 key={column.key}
+                role="columnheader"
+                scope="col"
                 onClick={() => handleSort(column.key)}
+                onKeyDown={(e) => handleSortKeyDown(e, column.key)}
                 className={sortable ? 'sortable' : ''}
+                tabIndex={sortable ? 0 : -1}
+                aria-sort={sortColumn === column.key 
+                  ? (sortDirection === 'asc' ? 'ascending' : 'descending') 
+                  : 'none'}
               >
                 {column.label}
                 {sortable && sortColumn === column.key && (
-                  <span className="sort-indicator">
+                  <span className="sort-indicator" aria-hidden="true">
                     {sortDirection === 'asc' ? ' ▲' : ' ▼'}
                   </span>
                 )}
@@ -60,18 +83,22 @@ function Table({
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
           {sortedData.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="no-data">
+            <tr role="row">
+              <td 
+                colSpan={columns.length} 
+                className="no-data"
+                role="gridcell"
+              >
                 No data available
               </td>
             </tr>
           ) : (
             sortedData.map((row, index) => (
-              <tr key={row.id || index}>
+              <tr key={row.id || index} role="row">
                 {columns.map((column) => (
-                  <td key={column.key}>
+                  <td key={column.key} role="gridcell">
                     {column.render ? column.render(row[column.key], row) : row[column.key]}
                   </td>
                 ))}
@@ -82,21 +109,30 @@ function Table({
       </table>
 
       {totalPages > 1 && onPageChange && (
-        <div className="table-pagination">
+        <div 
+          className="table-pagination"
+          role="navigation"
+          aria-label="Pagination"
+        >
           <Button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             size="small"
+            aria-label="Previous page"
           >
             Previous
           </Button>
-          <span className="page-info">
+          <span 
+            className="page-info"
+            aria-live="polite"
+          >
             Page {currentPage} of {totalPages}
           </span>
           <Button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             size="small"
+            aria-label="Next page"
           >
             Next
           </Button>

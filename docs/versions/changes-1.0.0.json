@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-05-14T22:10:14.186Z",
+  "summary": {
+    "total": 1,
+    "added": 1,
+    "removed": 0,
+    "modified": 0,
+    "breaking": 0,
+    "nonBreaking": 0
+  },
+  "details": {
+    "added": [
+      {
+        "type": "spec",
+        "message": "Initial API specification"
+      }
+    ],
+    "removed": [],
+    "modified": [],
+    "breaking": [],
+    "nonBreaking": []
+  }
+}

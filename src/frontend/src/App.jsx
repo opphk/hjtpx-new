@@ -1,16 +1,17 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Loading from './components/ui/Loading';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import AdminUsersPage from './pages/AdminUsersPage';
-import LogsPage from './pages/LogsPage';
-import SettingsPage from './pages/SettingsPage';
-import AuditDashboard from './pages/AuditDashboard';
-import UserList from './components/UserList';
 import DashboardLayout from './components/DashboardLayout';
+
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
+const LogsPage = lazy(() => import('./pages/LogsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const AuditDashboard = lazy(() => import('./pages/AuditDashboard'));
+const UserList = lazy(() => import('./components/UserList'));
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -76,7 +77,9 @@ const AppRoutes = () => {
         path="/login" 
         element={
           <PublicRoute>
-            <LoginPage />
+            <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+              <LoginPage />
+            </Suspense>
           </PublicRoute>
         } 
       />
@@ -84,7 +87,9 @@ const AppRoutes = () => {
         path="/register" 
         element={
           <PublicRoute>
-            <RegisterPage />
+            <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+              <RegisterPage />
+            </Suspense>
           </PublicRoute>
         } 
       />
@@ -92,7 +97,9 @@ const AppRoutes = () => {
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+              <DashboardPage />
+            </Suspense>
           </ProtectedRoute>
         } 
       />
@@ -101,7 +108,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <UserList />
+              <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+                <UserList />
+              </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
         } 
@@ -111,7 +120,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <AdminUsersPage />
+              <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+                <AdminUsersPage />
+              </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
         } 
@@ -121,7 +132,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <LogsPage />
+              <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+                <LogsPage />
+              </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
         } 
@@ -131,7 +144,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <SettingsPage />
+              <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+                <SettingsPage />
+              </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
         } 
@@ -141,7 +156,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <AuditDashboard />
+              <Suspense fallback={<Loading fullScreen text="加载中..." />}>
+                <AuditDashboard />
+              </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
         } 

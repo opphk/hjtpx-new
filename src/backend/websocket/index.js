@@ -11,14 +11,34 @@ class WebSocketServer {
         methods: ['GET', 'POST'],
         credentials: true
       },
-      pingTimeout: 60000,
-      pingInterval: 25000,
-      transports: ['websocket', 'polling']
+      pingTimeout: 30000,
+      pingInterval: 15000,
+      transports: ['websocket', 'polling'],
+      maxHttpBufferSize: 1e7,
+      perMessageDeflate: {
+        threshold: 1024,
+        serverNoContextTakeover: true,
+        clientNoContextTakeover: true,
+        serverMaxWindowBits: 10,
+        clientMaxWindowBits: 10,
+        memLevel: 7,
+        level: 6
+      }
     });
 
     this.connectedClients = new Map();
     this.roomSubscriptions = new Map();
-
+    
+    this.metrics = {
+      totalConnections: 0,
+      totalDisconnections: 0,
+      messagesSent: 0,
+      messagesReceived: 0,
+      errors: 0,
+      connectionTimes: [],
+      startTime: Date.now()
+    };
+    
     this.setupMiddleware();
     this.setupEventHandlers();
   }
@@ -58,6 +78,7 @@ class WebSocketServer {
     };
 
     this.connectedClients.set(socket.id, clientInfo);
+    this.metrics.totalConnections++;
 
     logger.info('Client connected', {
       socketId: socket.id,
@@ -103,7 +124,14 @@ class WebSocketServer {
       this.handleBroadcast(socket, data, callback);
     });
 
+    socket.on('get:metrics', (callback) => {
+      if (callback && typeof callback === 'function') {
+        callback({ success: true, metrics: this.getDetailedMetrics() });
+      }
+    });
+
     socket.on('error', error => {
+      this.metrics.errors++;
       logger.error('Socket error', {
         socketId: socket.id,
         userId: socket.userId,
@@ -229,6 +257,8 @@ class WebSocketServer {
 
   handleMessage(socket, data, callback) {
     try {
+      this.metrics.messagesReceived++;
+      
       logger.info('Message received', {
         socketId: socket.id,
         userId: socket.userId,
@@ -239,6 +269,7 @@ class WebSocketServer {
         callback({ success: true, received: true });
       }
     } catch (error) {
+      this.metrics.errors++;
       logger.error('Error handling message', { error: error.message });
       if (callback && typeof callback === 'function') {
         callback({ success: false, error: error.message });
@@ -264,6 +295,8 @@ class WebSocketServer {
         });
       }
 
+      this.metrics.messagesSent++;
+      
       logger.info('Broadcast sent', {
         socketId: socket.id,
         userId: socket.userId,
@@ -275,6 +308,7 @@ class WebSocketServer {
         callback({ success: true });
       }
     } catch (error) {
+      this.metrics.errors++;
       logger.error('Error sending broadcast', { error: error.message });
       if (callback && typeof callback === 'function') {
         callback({ success: false, error: error.message });
@@ -286,12 +320,17 @@ class WebSocketServer {
     const clientInfo = this.connectedClients.get(socket.id);
 
     if (clientInfo) {
+      const connectedDuration = Date.now() - clientInfo.connectedAt.getTime();
+      
       logger.info('Client disconnected', {
         socketId: socket.id,
         userId: socket.userId,
         reason,
-        connectedDuration: Date.now() - clientInfo.connectedAt.getTime()
+        connectedDuration
       });
+
+      this.metrics.totalDisconnections++;
+      this.metrics.connectionTimes.push(connectedDuration);
 
       this.broadcastUserOnlineStatus(socket.userId, false);
 
@@ -361,6 +400,30 @@ class WebSocketServer {
       user.socketCount++;
     }
     return Array.from(onlineUsers.values());
+  }
+
+  getDetailedMetrics() {
+    const uptime = Date.now() - this.metrics.startTime;
+    const avgConnectionTime = this.metrics.connectionTimes.length > 0
+      ? this.metrics.connectionTimes.reduce((sum, t) => sum + t, 0) / this.metrics.connectionTimes.length
+      : 0;
+    
+    return {
+      uptime,
+      currentConnections: this.connectedClients.size,
+      onlineUsers: this.getOnlineUsers().length,
+      totalConnections: this.metrics.totalConnections,
+      totalDisconnections: this.metrics.totalDisconnections,
+      messagesSent: this.metrics.messagesSent,
+      messagesReceived: this.metrics.messagesReceived,
+      errors: this.metrics.errors,
+      avgConnectionTime,
+      rooms: Array.from(this.roomSubscriptions.keys()),
+      subscriptions: Array.from(this.roomSubscriptions.entries()).map(([channel, users]) => ({
+        channel,
+        subscriberCount: users.size
+      }))
+    };
   }
 
   getConnectionStats() {

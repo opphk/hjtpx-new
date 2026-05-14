@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# 禁止访问管理页面
+Disallow: /admin/
+
+# 禁止访问用户特定页面
+Disallow: /users/
+
+# 禁止访问登录和注册页面（可选，根据需求）
+# Disallow: /login
+# Disallow: /register
+
+# Sitemap 链接（如果有）
+# Sitemap: https://hjtpx.com/sitemap.xml
