@@ -1,9 +1,10 @@
 const express = require('express');
+
 const router = express.Router();
-const { performanceMonitor } = require('../middleware/performanceMonitor');
-const cacheService = require('../services/cacheService');
-const queryOptimizer = require('../utils/queryOptimizer');
-const db = require('../../config/database/db');
+const db = require('../../../../config/database/db');
+const { performanceMonitor } = require('../../middleware/performanceMonitor');
+const cacheService = require('../../services/cacheService');
+const queryOptimizer = require('../../utils/queryOptimizer');
 
 router.get('/metrics', (req, res) => {
   try {

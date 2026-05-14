@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+
 const { Parser } = require('json2csv');
 
 const EXPORT_FORMATS = ['csv', 'excel', 'json'];
@@ -113,7 +114,9 @@ async function exportData(data, format, options = {}) {
     case 'json':
       return exportToJSON(data, options);
     default:
-      throw new Error(`Unsupported export format: ${format}. Supported formats: ${EXPORT_FORMATS.join(', ')}`);
+      throw new Error(
+        `Unsupported export format: ${format}. Supported formats: ${EXPORT_FORMATS.join(', ')}`
+      );
   }
 }
 

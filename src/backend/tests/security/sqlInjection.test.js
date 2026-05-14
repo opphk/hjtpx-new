@@ -13,10 +13,10 @@ describe('SQL Injection Protection', () => {
     test('should detect SQL keywords', () => {
       const maliciousInputs = [
         "'; DROP TABLE users; --",
-        "1 OR 1=1",
-        "1; DELETE FROM users WHERE 1=1",
+        '1 OR 1=1',
+        '1; DELETE FROM users WHERE 1=1',
         "admin'--",
-        "1 UNION SELECT password FROM users"
+        '1 UNION SELECT password FROM users'
       ];
 
       maliciousInputs.forEach(input => {
@@ -26,10 +26,7 @@ describe('SQL Injection Protection', () => {
     });
 
     test('should allow safe input', () => {
-      const safeInputs = [
-        'John Doe',
-        'Normal text without special chars'
-      ];
+      const safeInputs = ['John Doe', 'Normal text without special chars'];
 
       safeInputs.forEach(input => {
         const result = validateInput(input);
@@ -89,7 +86,7 @@ describe('SQL Injection Protection', () => {
 
     test('should handle arrays in objects', () => {
       const obj = {
-        ids: ["1", "2", "3"]
+        ids: ['1', '2', '3']
       };
 
       const result = validateObject(obj);
@@ -121,7 +118,7 @@ describe('SQL Injection Protection', () => {
     test('should detect injection attempts', () => {
       expect(checkForSqlInjection("' OR 1=1 --")).toBe(true);
       expect(checkForSqlInjection("'; DELETE FROM users")).toBe(true);
-      expect(checkForSqlInjection("1 UNION SELECT *")).toBe(true);
+      expect(checkForSqlInjection('1 UNION SELECT *')).toBe(true);
     });
 
     test('should pass safe strings', () => {
@@ -154,9 +151,9 @@ describe('SQL Injection Protection', () => {
     });
 
     test('should build multiple conditions', () => {
-      const result = buildWhereClause({ 
-        status: 'active', 
-        role: 'admin' 
+      const result = buildWhereClause({
+        status: 'active',
+        role: 'admin'
       });
       expect(result.clause).toBe('WHERE "status" = $1 AND "role" = $2');
       expect(result.params).toEqual(['active', 'admin']);
@@ -181,7 +178,7 @@ describe('SQL Injection Protection', () => {
     test('should build SELECT query', () => {
       const builder = createSafeQueryBuilder('users');
       const result = builder.select(['id', 'name'], { status: 'active' });
-      
+
       expect(result.query).toContain('SELECT "id", "name"');
       expect(result.query).toContain('FROM "users"');
       expect(result.query).toContain('WHERE "status" = $1');
@@ -191,7 +188,7 @@ describe('SQL Injection Protection', () => {
     test('should build INSERT query', () => {
       const builder = createSafeQueryBuilder('users');
       const result = builder.insert({ name: 'John', email: 'john@example.com' });
-      
+
       expect(result.query).toContain('INSERT INTO "users"');
       expect(result.query).toContain('("name", "email")');
       expect(result.query).toContain('VALUES ($1, $2)');
@@ -201,7 +198,7 @@ describe('SQL Injection Protection', () => {
     test('should build UPDATE query', () => {
       const builder = createSafeQueryBuilder('users');
       const result = builder.update({ name: 'Jane' }, { id: 1 });
-      
+
       expect(result.query).toContain('UPDATE "users"');
       expect(result.query).toContain('SET "name" = $1');
       expect(result.query).toContain('WHERE "id" = $1');
@@ -211,7 +208,7 @@ describe('SQL Injection Protection', () => {
     test('should build DELETE query', () => {
       const builder = createSafeQueryBuilder('users');
       const result = builder.delete({ id: 1 });
-      
+
       expect(result.query).toContain('DELETE FROM "users"');
       expect(result.query).toContain('WHERE "id" = $1');
       expect(result.params).toEqual([1]);

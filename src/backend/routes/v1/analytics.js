@@ -1,9 +1,14 @@
 const express = require('express');
+
 const router = express.Router();
-const analyticsService = require('../../services/analyticsService');
-const { generatePerformanceReport, databaseMonitor, cacheMonitor } = require('../../middleware/performanceMonitor');
-const { checkRole } = require('../../middleware/rbac');
 const db = require('../../../config/database/db');
+const {
+  generatePerformanceReport,
+  databaseMonitor,
+  cacheMonitor
+} = require('../../middleware/performanceMonitor');
+const { checkRole } = require('../../middleware/rbac');
+const analyticsService = require('../../services/analyticsService');
 
 router.get('/dashboard', async (req, res) => {
   try {
@@ -421,9 +426,11 @@ router.get('/export/summary', async (req, res) => {
 
     if (format === 'csv') {
       const csvHeader = 'Date,Active Users,Total Events,Feature Usage,Page Views\n';
-      const csvRows = data.map(r =>
-        `${r.date},${r.active_users},${r.total_events},${r.feature_usage},${r.page_views}`
-      ).join('\n');
+      const csvRows = data
+        .map(
+          r => `${r.date},${r.active_users},${r.total_events},${r.feature_usage},${r.page_views}`
+        )
+        .join('\n');
 
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=analytics-summary.csv');
@@ -478,10 +485,14 @@ router.get('/export/performance', async (req, res) => {
     }));
 
     if (format === 'csv') {
-      const csvHeader = 'Endpoint,Method,Call Count,Avg Duration (ms),Min Duration (ms),Max Duration (ms),P95 Duration (ms),Error Count\n';
-      const csvRows = data.map(r =>
-        `${r.endpoint},${r.method},${r.call_count},${r.avg_duration_ms},${r.min_duration_ms},${r.max_duration_ms},${r.p95_duration_ms},${r.error_count}`
-      ).join('\n');
+      const csvHeader =
+        'Endpoint,Method,Call Count,Avg Duration (ms),Min Duration (ms),Max Duration (ms),P95 Duration (ms),Error Count\n';
+      const csvRows = data
+        .map(
+          r =>
+            `${r.endpoint},${r.method},${r.call_count},${r.avg_duration_ms},${r.min_duration_ms},${r.max_duration_ms},${r.p95_duration_ms},${r.error_count}`
+        )
+        .join('\n');
 
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=api-performance.csv');

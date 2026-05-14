@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 
 let db = null;
@@ -122,17 +123,17 @@ router.get('/detailed', async (req, res) => {
     const totalResponseTime = Date.now() - startTime;
     healthStatus.responseTime = `${totalResponseTime}ms`;
 
-    const statusCode = healthStatus.status === 'healthy' ? 200 : 
-                       healthStatus.status === 'degraded' ? 200 : 503;
+    const statusCode =
+      healthStatus.status === 'healthy' ? 200 : healthStatus.status === 'degraded' ? 200 : 503;
 
     res.status(statusCode).json({
       success: healthStatus.status !== 'unhealthy',
       data: healthStatus
     });
-
   } catch (error) {
     healthStatus.status = 'unhealthy';
-    healthStatus.error = process.env.NODE_ENV === 'development' ? error.message : 'Health check failed';
+    healthStatus.error =
+      process.env.NODE_ENV === 'development' ? error.message : 'Health check failed';
 
     res.status(503).json({
       success: false,

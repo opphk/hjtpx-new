@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
-const sessionService = require('../services/sessionService');
+
 const pool = require('../../../config/database/db');
+const sessionService = require('../services/sessionService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -40,10 +41,7 @@ async function getLoginAttempts(email) {
 }
 
 async function clearLoginAttempts(email) {
-  await pool.query(
-    `DELETE FROM login_attempts WHERE email = $1`,
-    [email]
-  );
+  await pool.query(`DELETE FROM login_attempts WHERE email = $1`, [email]);
 }
 
 function auth(req, res, next) {
@@ -153,8 +151,7 @@ function optionalAuth(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
-  } catch (error) {
-  }
+  } catch (error) {}
 
   next();
 }
@@ -167,10 +164,7 @@ async function requireVerifiedEmail(req, res, next) {
     });
   }
 
-  const result = await pool.query(
-    'SELECT email_verified FROM users WHERE id = $1',
-    [req.user.id]
-  );
+  const result = await pool.query('SELECT email_verified FROM users WHERE id = $1', [req.user.id]);
 
   if (result.rows.length > 0 && result.rows[0].email_verified) {
     return next();
@@ -187,12 +181,20 @@ async function getDeviceInfo(req) {
     ipAddress: req.ip || req.connection.remoteAddress,
     userAgent: req.headers['user-agent'],
     deviceInfo: {
-      browser: req.headers['user-agent']?.includes('Chrome') ? 'Chrome' :
-               req.headers['user-agent']?.includes('Firefox') ? 'Firefox' :
-               req.headers['user-agent']?.includes('Safari') ? 'Safari' : 'Unknown',
-      os: req.headers['user-agent']?.includes('Windows') ? 'Windows' :
-          req.headers['user-agent']?.includes('Mac') ? 'macOS' :
-          req.headers['user-agent']?.includes('Linux') ? 'Linux' : 'Unknown',
+      browser: req.headers['user-agent']?.includes('Chrome')
+        ? 'Chrome'
+        : req.headers['user-agent']?.includes('Firefox')
+          ? 'Firefox'
+          : req.headers['user-agent']?.includes('Safari')
+            ? 'Safari'
+            : 'Unknown',
+      os: req.headers['user-agent']?.includes('Windows')
+        ? 'Windows'
+        : req.headers['user-agent']?.includes('Mac')
+          ? 'macOS'
+          : req.headers['user-agent']?.includes('Linux')
+            ? 'Linux'
+            : 'Unknown',
       mobile: /mobile|android|iphone|ipad|tablet/i.test(req.headers['user-agent'] || '')
     }
   };

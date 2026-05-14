@@ -1,13 +1,15 @@
-const pool = require('../../config/database/db');
 const bcrypt = require('bcrypt');
+
+const pool = require('../../../config/database/db');
+const queryOptimizer = require('../utils/queryOptimizer');
+
 const authService = require('./authService');
 const cacheService = require('./cacheService');
-const queryOptimizer = require('../utils/queryOptimizer');
 
 const VALID_ROLES = ['admin', 'user', 'moderator'];
 const CACHE_KEYS = {
   ALL_USERS: 'users:all',
-  USER_BY_ID: (id) => `users:id:${id}`
+  USER_BY_ID: id => `users:id:${id}`
 };
 const CACHE_TTL = 300;
 

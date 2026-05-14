@@ -1,11 +1,15 @@
 const express = require('express');
+
 const router = express.Router();
 const multer = require('multer');
+
 const path = require('path');
+
 const { v4: uuidv4 } = require('uuid');
-const importService = require('../services/importService');
+
 const { authMiddleware } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleCheck');
+const importService = require('../services/importService');
 const fileValidator = require('../utils/fileValidator');
 
 router.use(authMiddleware);
@@ -33,7 +37,11 @@ const upload = multer({
     if (importService.ALLOWED_FILE_TYPES.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error(`File type not supported. Allowed types: ${importService.ALLOWED_FILE_TYPES.join(', ')}`));
+      cb(
+        new Error(
+          `File type not supported. Allowed types: ${importService.ALLOWED_FILE_TYPES.join(', ')}`
+        )
+      );
     }
   }
 });

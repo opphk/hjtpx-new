@@ -1,12 +1,13 @@
 const express = require('express');
+
 const router = express.Router();
 
-const healthRoutes = require('./health');
-const usersRoutes = require('./users');
+const adminRoutes = require('./admin');
 const authRoutes = require('./auth');
+const healthRoutes = require('./health');
 const passwordRoutes = require('./password');
 const performanceRoutes = require('./performance');
-const adminRoutes = require('./admin');
+const usersRoutes = require('./users');
 
 router.use('/health', healthRoutes);
 router.use('/users', usersRoutes);

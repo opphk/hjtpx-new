@@ -1,8 +1,9 @@
 const express = require('express');
+
 const router = express.Router();
-const notificationService = require('../services/notificationService');
 const { authMiddleware } = require('../middleware/auth');
 const { validate, notificationSchemas } = require('../middleware/validator');
+const notificationService = require('../services/notificationService');
 
 router.use(authMiddleware);
 
@@ -10,17 +11,14 @@ router.get('/', async (req, res, next) => {
   try {
     const { status, type, page, limit, sortBy, order } = req.query;
 
-    const result = await notificationService.getUserNotifications(
-      req.user.id,
-      {
-        status,
-        type,
-        page: parseInt(page) || 1,
-        limit: parseInt(limit) || 20,
-        sortBy: sortBy || 'createdAt',
-        order: order || 'desc'
-      }
-    );
+    const result = await notificationService.getUserNotifications(req.user.id, {
+      status,
+      type,
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+      sortBy: sortBy || 'createdAt',
+      order: order || 'desc'
+    });
 
     res.json({
       success: true,
@@ -47,10 +45,7 @@ router.get('/unread-count', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const notification = await notificationService.getNotificationById(
-      req.params.id,
-      req.user.id
-    );
+    const notification = await notificationService.getNotificationById(req.params.id, req.user.id);
 
     if (!notification) {
       return res.status(404).json({
@@ -86,10 +81,7 @@ router.post('/', validate(notificationSchemas.create), async (req, res, next) =>
 
 router.put('/:id/read', async (req, res, next) => {
   try {
-    const result = await notificationService.markAsRead(
-      req.params.id,
-      req.user.id
-    );
+    const result = await notificationService.markAsRead(req.params.id, req.user.id);
 
     res.json({
       success: true,

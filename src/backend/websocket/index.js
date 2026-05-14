@@ -1,5 +1,6 @@
-const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const { Server } = require('socket.io');
+
 const { logger } = require('../middleware/logger');
 
 class WebSocketServer {
@@ -43,7 +44,7 @@ class WebSocketServer {
   }
 
   setupEventHandlers() {
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', socket => {
       this.handleConnection(socket);
     });
   }
@@ -74,7 +75,7 @@ class WebSocketServer {
   }
 
   setupSocketEventHandlers(socket) {
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', reason => {
       this.handleDisconnection(socket, reason);
     });
 
@@ -102,7 +103,7 @@ class WebSocketServer {
       this.handleBroadcast(socket, data, callback);
     });
 
-    socket.on('error', (error) => {
+    socket.on('error', error => {
       logger.error('Socket error', {
         socketId: socket.id,
         userId: socket.userId,

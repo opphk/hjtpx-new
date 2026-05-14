@@ -1,23 +1,23 @@
 require('dotenv').config();
 
-const express = require('express');
 const http = require('http');
+
 const compression = require('compression');
+const express = require('express');
+
 const app = express();
-const server = http.createServer(app);
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-const responseFormatter = require('./backend/middleware/responseFormatter');
-const { logger, logError } = require('./backend/middleware/logger');
 const { corsMiddleware } = require('./backend/middleware/cors');
-const { ipRateLimiter } = require('./backend/middleware/rateLimiter');
-const { performanceMiddleware } = require('./backend/middleware/performanceMonitor');
 const errorHandler = require('./backend/middleware/errorHandler');
-const websocketService = require('./backend/services/websocketService');
-
+const { logger, logError } = require('./backend/middleware/logger');
+const { performanceMiddleware } = require('./backend/middleware/performanceMonitor');
+const { ipRateLimiter } = require('./backend/middleware/rateLimiter');
+const responseFormatter = require('./backend/middleware/responseFormatter');
 const v1Routes = require('./backend/routes/v1');
+const websocketService = require('./backend/services/websocketService');
 
 app.use((req, res, next) => {
   req.requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -25,16 +25,18 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(compression({
-  level: 6,
-  threshold: 1024,
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
+app.use(
+  compression({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+      return compression.filter(req, res);
     }
-    return compression.filter(req, res);
-  }
-}));
+  })
+);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -91,7 +93,6 @@ app.use((err, req, res, next) => {
 app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
-  console.log('\n========================================');
   console.log('🚀 HJTPX API Server');
   console.log('========================================');
   console.log(`Environment: ${NODE_ENV}`);
@@ -105,30 +106,24 @@ const server = app.listen(PORT, () => {
 websocketService.initialize(server);
 console.log('✅ WebSocket service initialized');
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+const gracefulShutdown = signal => {
+  console.log(`${signal} signal received: closing HTTP server`);
   websocketService.close();
   server.close(() => {
     console.log('HTTP server closed');
     process.exit(0);
   });
-});
+};
 
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  websocketService.close();
-  server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason, promise) => {
   logError(new Error(reason), null, { context: 'Unhandled Rejection' });
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logError(error, null, { context: 'Uncaught Exception' });
   console.error('Uncaught Exception:', error);
   process.exit(1);

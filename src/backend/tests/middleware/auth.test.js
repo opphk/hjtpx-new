@@ -1,5 +1,6 @@
-const { auth } = require('../../../backend/middleware/auth');
 const jwt = require('jsonwebtoken');
+
+const { auth } = require('../../middleware/auth');
 
 describe('Auth Middleware', () => {
   let mockReq;
@@ -81,11 +82,9 @@ describe('Auth Middleware', () => {
     });
 
     it('should reject token signed with wrong secret', () => {
-      const token = jwt.sign(
-        { userId: 1, email: 'test@example.com' },
-        'wrong-secret-key',
-        { expiresIn: '1h' }
-      );
+      const token = jwt.sign({ userId: 1, email: 'test@example.com' }, 'wrong-secret-key', {
+        expiresIn: '1h'
+      });
       mockReq.headers.authorization = `Bearer ${token}`;
 
       auth(mockReq, mockRes, mockNext);

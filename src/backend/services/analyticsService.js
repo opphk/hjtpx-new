@@ -1,5 +1,6 @@
-const redisClient = require('../../../config/redis/client');
 const db = require('../../../config/database/db');
+const redisClient = require('../../../config/redis/client');
+
 const realTimeAnalyticsService = require('./realTimeAnalyticsService');
 
 class AnalyticsService {
@@ -30,7 +31,10 @@ class AnalyticsService {
 
         pipeline.hIncrBy(`analytics:events:${date}`, `${eventType}:count`, 1);
         pipeline.hIncrBy(`analytics:users:${date}`, `${userId}:count`, 1);
-        pipeline.zAdd(`analytics:events:timeline`, { score: timestamp, value: `${eventType}:${userId}:${timestamp}` });
+        pipeline.zAdd(`analytics:events:timeline`, {
+          score: timestamp,
+          value: `${eventType}:${userId}:${timestamp}`
+        });
         pipeline.expire(`analytics:events:${date}`, 86400 * 7);
         pipeline.expire(`analytics:users:${date}`, 86400 * 7);
         pipeline.expire(`analytics:events:timeline`, 86400 * 7);
@@ -58,7 +62,11 @@ class AnalyticsService {
   }
 
   async trackFeatureUsage(userId, feature, action, metadata = {}) {
-    return this.trackEvent(userId, `feature:${feature}:${action}`, { feature, action, ...metadata });
+    return this.trackEvent(userId, `feature:${feature}:${action}`, {
+      feature,
+      action,
+      ...metadata
+    });
   }
 
   async trackApiCall(userId, endpoint, method, statusCode, duration) {
@@ -192,7 +200,13 @@ class AnalyticsService {
       return await realTimeAnalyticsService.getRealTimeStats();
     } catch (error) {
       console.error('Error getting real-time stats:', error);
-      return { activeUsers: 0, requestsLastMinute: 0, eventsLastMinute: 0, topFeatures: [], error: error.message };
+      return {
+        activeUsers: 0,
+        requestsLastMinute: 0,
+        eventsLastMinute: 0,
+        topFeatures: [],
+        error: error.message
+      };
     }
   }
 

@@ -1,4 +1,9 @@
-const { escapeHtml, escapeHtmlDeep, removeXssPatterns, sanitizeObject } = require('../../utils/xssSanitizer');
+const {
+  escapeHtml,
+  escapeHtmlDeep,
+  removeXssPatterns,
+  sanitizeObject
+} = require('../../utils/xssSanitizer');
 
 describe('XSS Sanitizer', () => {
   describe('escapeHtml', () => {
@@ -13,7 +18,7 @@ describe('XSS Sanitizer', () => {
     });
 
     test('should escape quotes', () => {
-      expect(escapeHtml("it's a \"test\"")).toBe('it&#x27;s a &quot;test&quot;');
+      expect(escapeHtml('it\'s a "test"')).toBe('it&#x27;s a &quot;test&quot;');
     });
 
     test('should handle non-string inputs', () => {

@@ -1,6 +1,8 @@
-const pool = require('../../../config/database/db');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+
+const jwt = require('jsonwebtoken');
+
+const pool = require('../../../config/database/db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-production';
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000;
@@ -95,10 +97,10 @@ async function deleteSession(token) {
 
 async function deleteUserSessions(userId, exceptToken = null) {
   if (exceptToken) {
-    await pool.query(
-      'DELETE FROM sessions WHERE user_id = $1 AND token != $2',
-      [userId, exceptToken]
-    );
+    await pool.query('DELETE FROM sessions WHERE user_id = $1 AND token != $2', [
+      userId,
+      exceptToken
+    ]);
   } else {
     await pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
   }
@@ -135,18 +137,15 @@ async function cleanupExpiredSessions() {
 }
 
 async function revokeSession(sessionId, userId) {
-  await pool.query(
-    'UPDATE sessions SET is_revoked = true WHERE id = $1 AND user_id = $2',
-    [sessionId, userId]
-  );
+  await pool.query('UPDATE sessions SET is_revoked = true WHERE id = $1 AND user_id = $2', [
+    sessionId,
+    userId
+  ]);
   return { message: 'Session revoked successfully' };
 }
 
 async function revokeAllUserSessions(userId) {
-  await pool.query(
-    'UPDATE sessions SET is_revoked = true WHERE user_id = $1',
-    [userId]
-  );
+  await pool.query('UPDATE sessions SET is_revoked = true WHERE user_id = $1', [userId]);
   return { message: 'All sessions revoked successfully' };
 }
 
@@ -197,15 +196,12 @@ async function enforceMaxSessions(userId, maxSessions = 5) {
      AND is_revoked = false
      ORDER BY last_activity ASC
      LIMIT $2`,
-    [userId, Math.max(0, await getActiveSessionsCount(userId) - maxSessions)]
+    [userId, Math.max(0, (await getActiveSessionsCount(userId)) - maxSessions)]
   );
 
   if (result.rows.length > 0) {
     const idsToDelete = result.rows.map(row => row.id);
-    await pool.query(
-      'DELETE FROM sessions WHERE id = ANY($1)',
-      [idsToDelete]
-    );
+    await pool.query('DELETE FROM sessions WHERE id = ANY($1)', [idsToDelete]);
   }
 
   return { removedCount: result.rows.length };

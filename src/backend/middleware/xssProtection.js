@@ -13,7 +13,7 @@ const CSP_POLICIES = {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests"
+    'upgrade-insecure-requests'
   ],
   strict: [
     "default-src 'self'",
@@ -27,7 +27,7 @@ const CSP_POLICIES = {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests"
+    'upgrade-insecure-requests'
   ],
   relaxed: [
     "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -55,43 +55,43 @@ function xssProtection(options = {}) {
     excludedPaths = [],
     cspMode = 'default'
   } = options;
-  
+
   return (req, res, next) => {
     if (!enabled) {
       return next();
     }
-    
+
     if (excludedPaths.some(path => req.path.startsWith(path))) {
       return next();
     }
-    
+
     try {
       if (sanitizeBody && req.body) {
         req.body = sanitizeObject(req.body, { stripAllTags });
       }
-      
+
       if (sanitizeQuery && req.query) {
         req.query = sanitizeObject(req.query, { stripAllTags });
       }
-      
+
       if (sanitizeParams && req.params) {
         req.params = sanitizeObject(req.params, { stripAllTags });
       }
-      
+
       if (sanitizeHeaders && req.headers) {
         const sanitizedHeaders = {};
         for (const [key, value] of Object.entries(req.headers)) {
           if (typeof value === 'string') {
             sanitizedHeaders[key] = sanitizeObject(value, { stripAllTags });
           } else if (Array.isArray(value)) {
-            sanitizedHeaders[key] = value.map(v => 
+            sanitizedHeaders[key] = value.map(v =>
               typeof v === 'string' ? sanitizeObject(v, { stripAllTags }) : v
             );
           }
         }
         req.headers = sanitizedHeaders;
       }
-      
+
       req.xssSanitized = true;
     } catch (error) {
       console.error('XSS sanitization error:', error);
@@ -100,7 +100,7 @@ function xssProtection(options = {}) {
         error: 'Invalid request data'
       });
     }
-    
+
     next();
   };
 }
@@ -109,18 +109,18 @@ function setCSPHeaders(options = {}) {
   const mode = options.mode || 'default';
   const policies = CSP_POLICIES[mode] || CSP_POLICIES.default;
   const reportUri = options.reportUri;
-  
+
   return (req, res, next) => {
     let policyString = policies.join('; ');
-    
+
     if (reportUri) {
       policyString += `; report-uri ${reportUri}`;
     }
-    
+
     res.setHeader('Content-Security-Policy', policyString);
     res.setHeader('X-Content-Security-Policy', policyString);
     res.setHeader('X-WebKit-CSP', policyString);
-    
+
     next();
   };
 }
@@ -140,24 +140,27 @@ function xssDetector() {
     /data\s*:/i,
     /vbscript:/i
   ];
-  
+
   return (req, res, next) => {
     const checkValue = (key, value, path = '') => {
       if (typeof value !== 'string') return false;
-      
+
       for (const pattern of suspiciousPatterns) {
         if (pattern.test(value)) {
-          console.warn(`Suspicious XSS pattern detected in ${path}${key}:`, value.substring(0, 100));
+          console.warn(
+            `Suspicious XSS pattern detected in ${path}${key}:`,
+            value.substring(0, 100)
+          );
           return true;
         }
       }
       return false;
     };
-    
+
     const checkObject = (obj, path = '') => {
       for (const [key, value] of Object.entries(obj)) {
         const currentPath = path ? `${path}.${key}` : key;
-        
+
         if (typeof value === 'string') {
           if (checkValue(key, value, currentPath)) {
             return true;
@@ -176,19 +179,19 @@ function xssDetector() {
       }
       return false;
     };
-    
+
     try {
       if (req.body && checkObject(req.body, 'body')) {
         req.xssAttempt = true;
       }
-      
+
       if (req.query && checkObject(req.query, 'query')) {
         req.xssAttempt = true;
       }
     } catch (error) {
       console.error('XSS detection error:', error);
     }
-    
+
     next();
   };
 }
@@ -208,10 +211,10 @@ function strictXssValidation() {
       { pattern: /url\s*\([^)]*\)/gi, name: 'css_url' },
       { pattern: /vbscript\s*:/gi, name: 'vbscript_protocol' }
     ];
-    
-    const validateValue = (value) => {
+
+    const validateValue = value => {
       if (typeof value !== 'string') return true;
-      
+
       for (const { pattern } of dangerousPatterns) {
         if (pattern.test(value)) {
           return false;
@@ -219,8 +222,8 @@ function strictXssValidation() {
       }
       return true;
     };
-    
-    const validateObject = (obj) => {
+
+    const validateObject = obj => {
       for (const value of Object.values(obj)) {
         if (typeof value === 'string') {
           if (!validateValue(value)) {
@@ -240,7 +243,7 @@ function strictXssValidation() {
       }
       return true;
     };
-    
+
     try {
       if (req.body && !validateObject(req.body)) {
         return res.status(400).json({
@@ -251,7 +254,7 @@ function strictXssValidation() {
     } catch (error) {
       console.error('XSS validation error:', error);
     }
-    
+
     next();
   };
 }
@@ -264,7 +267,7 @@ function addSecurityHeaders() {
     res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-    
+
     next();
   };
 }

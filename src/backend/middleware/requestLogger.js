@@ -32,7 +32,10 @@ const generateRequestId = () => {
   return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-const sensitiveDataMasker = (data, sensitiveFields = ['password', 'token', 'authorization', 'cookie', 'secret']) => {
+const sensitiveDataMasker = (
+  data,
+  sensitiveFields = ['password', 'token', 'authorization', 'cookie', 'secret']
+) => {
   if (!data || typeof data !== 'object') {
     return data;
   }

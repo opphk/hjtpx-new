@@ -1,7 +1,8 @@
 const express = require('express');
+
 const router = express.Router();
-const exportService = require('../services/exportService');
 const { authMiddleware } = require('../middleware/auth');
+const exportService = require('../services/exportService');
 
 router.use(authMiddleware);
 
@@ -101,7 +102,10 @@ async function fetchDataForExport(tableName, fields) {
 
   let query = 'SELECT';
   if (fields) {
-    const fieldList = fields.split(',').map(f => f.trim()).join(', ');
+    const fieldList = fields
+      .split(',')
+      .map(f => f.trim())
+      .join(', ');
     query += ` ${fieldList}`;
   } else {
     query += ' *';

@@ -1,7 +1,9 @@
-const multer = require('multer');
-const path = require('path');
 const crypto = require('crypto');
+const path = require('path');
+
+const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
+
 const { validateFile } = require('../utils/fileValidator');
 
 const ALLOWED_FILE_TYPES = ['image', 'document', 'csv', 'json'];
@@ -52,11 +54,7 @@ function createUploadMiddleware(options = {}) {
   return multer({
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
-      const validation = validateFile(
-        file.originalname,
-        file.buffer,
-        allowedTypes
-      );
+      const validation = validateFile(file.originalname, file.buffer, allowedTypes);
 
       if (!validation.valid) {
         const error = new Error(validation.errors.join(', '));

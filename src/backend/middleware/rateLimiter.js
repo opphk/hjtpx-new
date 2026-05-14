@@ -1,5 +1,7 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const RedisStore = require('rate-limit-redis').default;
+
 const redisClient = require('../../../config/redis/client');
 
 const redisStore = new RedisStore({
@@ -37,16 +39,16 @@ const createRateLimiter = (options = {}) => {
 const ipRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress;
+  keyGenerator: req => {
+    return ipKeyGenerator(req);
   }
 });
 
 const userRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 200,
-  keyGenerator: (req) => {
-    return req.user?.id || req.ip || req.connection.remoteAddress;
+  keyGenerator: req => {
+    return req.user?.id ? `user:${req.user.id}` : ipKeyGenerator(req);
   }
 });
 
@@ -66,8 +68,8 @@ const authRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 5,
   skipSuccessfulRequests: true,
-  keyGenerator: (req) => {
-    return `auth:${req.ip || req.connection.remoteAddress}`;
+  keyGenerator: req => {
+    return `auth:${ipKeyGenerator(req)}`;
   }
 });
 

@@ -5,11 +5,7 @@ const CACHE_TTL = 300;
 const cache = new Map();
 
 function optimizeSearchQuery(model, query, filters, options = {}) {
-  const {
-    useIndex = true,
-    analyzeQuery = true,
-    optimizeFilters = true
-  } = options;
+  const { useIndex = true, analyzeQuery = true, optimizeFilters = true } = options;
 
   let optimizedQuery = query;
   let warnings = [];
@@ -94,7 +90,7 @@ function getFilterComplexity(filter) {
 }
 
 function addToCache(key, data, ttl = CACHE_TTL) {
-  const expiresAt = Date.now() + (ttl * 1000);
+  const expiresAt = Date.now() + ttl * 1000;
   cache.set(key, { data, expiresAt });
 
   setTimeout(() => {

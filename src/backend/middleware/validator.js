@@ -3,7 +3,7 @@ const schemas = require('../utils/validationRules');
 const validator = (schemaName, property = 'body') => {
   return (req, res, next) => {
     const schema = schemas[schemaName];
-    
+
     if (!schema) {
       return res.status(500).json({
         success: false,
@@ -14,9 +14,14 @@ const validator = (schemaName, property = 'body') => {
       });
     }
 
-    const dataToValidate = property === 'body' ? req.body :
-                          property === 'query' ? req.query :
-                          property === 'params' ? req.params : req.body;
+    const dataToValidate =
+      property === 'body'
+        ? req.body
+        : property === 'query'
+          ? req.query
+          : property === 'params'
+            ? req.params
+            : req.body;
 
     const { error, value } = schema.validate(dataToValidate, {
       abortEarly: false,

@@ -1,9 +1,9 @@
-const { 
-  createCsrfToken, 
-  generateSignedToken, 
+const {
+  createCsrfToken,
+  generateSignedToken,
   verifyCsrfToken,
   csrfTokenGenerator,
-  doubleSubmitCookie 
+  doubleSubmitCookie
 } = require('../../middleware/csrfProtection');
 
 describe('CSRF Protection', () => {

@@ -1,4 +1,4 @@
-const redisClient = require('../../config/redis/client');
+const redisClient = require('../../../config/redis/client');
 
 class CacheService {
   constructor() {
@@ -23,7 +23,7 @@ class CacheService {
         await redisClient.connect();
       }
       this.isRedisConnected = true;
-      redisClient.on('error', (err) => {
+      redisClient.on('error', err => {
         console.error('Redis connection error:', err);
         this.isRedisConnected = false;
       });
@@ -54,9 +54,8 @@ class CacheService {
             redisClient.setEx(key, this.defaultTTL, JSON.stringify(memEntry.value)).catch(() => {});
           }
           return memEntry.value;
-        } else {
-          this.memoryCache.delete(key);
         }
+        this.memoryCache.delete(key);
       }
 
       this.stats.misses++;
@@ -85,10 +84,13 @@ class CacheService {
         clearTimeout(this.cacheTimers.get(key));
       }
 
-      const timer = setTimeout(() => {
-        this.memoryCache.delete(key);
-        this.cacheTimers.delete(key);
-      }, Math.min(ttl * 1000, this.memoryCacheTTL));
+      const timer = setTimeout(
+        () => {
+          this.memoryCache.delete(key);
+          this.cacheTimers.delete(key);
+        },
+        Math.min(ttl * 1000, this.memoryCacheTTL)
+      );
 
       this.cacheTimers.set(key, timer);
       this.stats.sets++;
@@ -149,9 +151,7 @@ class CacheService {
   }
 
   matchPattern(key, pattern) {
-    const regexPattern = pattern
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.');
+    const regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
     return new RegExp(`^${regexPattern}$`).test(key);
   }
 
@@ -162,7 +162,7 @@ class CacheService {
       }
 
       const values = await redisClient.mGet(keys.map(k => k));
-      return values.map(v => v ? JSON.parse(v) : null);
+      return values.map(v => (v ? JSON.parse(v) : null));
     } catch (error) {
       this.stats.errors++;
       console.error('Cache getMulti error:', error);
@@ -225,7 +225,7 @@ class CacheService {
     const total = this.stats.hits + this.stats.misses;
     return {
       ...this.stats,
-      hitRate: total > 0 ? (this.stats.hits / total * 100).toFixed(2) + '%' : '0%',
+      hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) + '%' : '0%',
       memoryCacheSize: this.memoryCache.size,
       isRedisConnected: this.isRedisConnected
     };

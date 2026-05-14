@@ -137,7 +137,7 @@ export function createIntersectionObserver(callback, options = {}) {
   return {
     observe(element) {
       if (!observer) {
-        observer = new IntersectionObserver((entries) => {
+        observer = new IntersectionObserver(entries => {
           entries.forEach(entry => callback(entry));
         }, defaultOptions);
       }
@@ -179,32 +179,34 @@ export function batchUpdates(callback) {
 }
 
 export function generatePreloadHints(assets) {
-  return assets.map(asset => {
-    if (asset.type === 'script') {
-      return {
-        rel: 'preload',
-        as: 'script',
-        href: asset.src,
-        crossOrigin: asset.crossOrigin
-      };
-    }
-    if (asset.type === 'style') {
-      return {
-        rel: 'preload',
-        as: 'style',
-        href: asset.href
-      };
-    }
-    if (asset.type === 'image') {
-      return {
-        rel: 'preload',
-        as: 'image',
-        href: asset.src,
-        ...(asset.imagesrcset && { imagesrcset: asset.imagesrcset })
-      };
-    }
-    return null;
-  }).filter(Boolean);
+  return assets
+    .map(asset => {
+      if (asset.type === 'script') {
+        return {
+          rel: 'preload',
+          as: 'script',
+          href: asset.src,
+          crossOrigin: asset.crossOrigin
+        };
+      }
+      if (asset.type === 'style') {
+        return {
+          rel: 'preload',
+          as: 'style',
+          href: asset.href
+        };
+      }
+      if (asset.type === 'image') {
+        return {
+          rel: 'preload',
+          as: 'image',
+          href: asset.src,
+          ...(asset.imagesrcset && { imagesrcset: asset.imagesrcset })
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
 }
 
 export function createResourceCache(maxSize = 50) {

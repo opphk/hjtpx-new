@@ -28,15 +28,13 @@ const format = winston.format.combine(
 const consoleFormat = winston.format.combine(
   winston.format.colorize({ all: true }),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`
-  )
+  winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
 );
 
 const developFormat = winston.format.combine(
   winston.format.colorize({ all: true }),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf((info) => {
+  winston.format.printf(info => {
     const { level, message, timestamp, ...meta } = info;
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `${timestamp} [${level}]: ${message} ${metaStr}`;
@@ -79,7 +77,7 @@ const Logger = winston.createLogger({
   exitOnError: false
 });
 
-const createChildLogger = (context) => {
+const createChildLogger = context => {
   return Logger.child(context);
 };
 

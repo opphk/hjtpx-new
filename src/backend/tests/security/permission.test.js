@@ -6,14 +6,13 @@ jest.mock('bcrypt', () => ({
   compare: jest.fn()
 }));
 
+const pool = require('../../../../config/database/db');
 const {
   checkPermission,
   requirePermission,
   requireMinimumRole,
   PERMISSIONS
 } = require('../../services/permissionService');
-
-const pool = require('../../../../config/database/db');
 
 describe('Permission Service', () => {
   beforeEach(() => {
@@ -23,28 +22,28 @@ describe('Permission Service', () => {
   describe('checkPermission', () => {
     test('should return true for admin with any permission', async () => {
       pool.query.mockResolvedValueOnce({ rows: [{ role: 'admin' }] });
-      
+
       const result = await checkPermission(1, 'delete');
       expect(result).toBe(true);
     });
 
     test('should return false for user without admin permission', async () => {
       pool.query.mockResolvedValueOnce({ rows: [{ role: 'user' }] });
-      
+
       const result = await checkPermission(1, 'manage_users');
       expect(result).toBe(false);
     });
 
     test('should return true for user with basic permission', async () => {
       pool.query.mockResolvedValueOnce({ rows: [{ role: 'user' }] });
-      
+
       const result = await checkPermission(1, 'read');
       expect(result).toBe(true);
     });
 
     test('should return false for non-existent user', async () => {
       pool.query.mockResolvedValueOnce({ rows: [] });
-      
+
       const result = await checkPermission(999, 'read');
       expect(result).toBe(false);
     });
@@ -53,7 +52,7 @@ describe('Permission Service', () => {
   describe('requirePermission middleware', () => {
     test('should call next for authorized user', async () => {
       pool.query.mockResolvedValueOnce({ rows: [{ role: 'admin' }] });
-      
+
       const middleware = requirePermission('delete');
       const req = { user: { id: 1 } };
       const res = {
@@ -76,7 +75,7 @@ describe('Permission Service', () => {
       const next = jest.fn();
 
       await middleware(req, res, next);
-      
+
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
@@ -87,7 +86,7 @@ describe('Permission Service', () => {
 
     test('should return 403 for unauthorized user', async () => {
       pool.query.mockResolvedValueOnce({ rows: [{ role: 'user' }] });
-      
+
       const middleware = requirePermission('manage_users');
       const req = { user: { id: 1, ip: '127.0.0.1' } };
       const res = {
@@ -97,7 +96,7 @@ describe('Permission Service', () => {
       const next = jest.fn();
 
       await middleware(req, res, next);
-      
+
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
@@ -143,7 +142,7 @@ describe('Permission Service', () => {
       const next = jest.fn();
 
       await middleware(req, res, next);
-      
+
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
         success: false,

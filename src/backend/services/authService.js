@@ -1,6 +1,8 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
 const pool = require('../../../config/database/db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-production';
@@ -29,7 +31,10 @@ async function register({ email, name, password, role = 'user' }) {
 }
 
 async function login({ email, password }) {
-  const result = await pool.query('SELECT id, email, name, password, role FROM users WHERE email = $1', [email]);
+  const result = await pool.query(
+    'SELECT id, email, name, password, role FROM users WHERE email = $1',
+    [email]
+  );
 
   if (result.rows.length === 0) {
     throw new Error('Invalid credentials');
@@ -60,10 +65,11 @@ async function forgotPassword(email) {
   const hashedToken = await bcrypt.hash(resetToken, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY);
 
-  await pool.query(
-    'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3',
-    [hashedToken, expiresAt, email]
-  );
+  await pool.query('UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3', [
+    hashedToken,
+    expiresAt,
+    email
+  ]);
 
   console.log(`Password reset token for ${email}: ${resetToken}`);
 
@@ -131,11 +137,9 @@ async function validateSession(token) {
 }
 
 function generateToken(user) {
-  return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  return jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN
+  });
 }
 
 function validatePassword(password) {
@@ -143,7 +147,9 @@ function validatePassword(password) {
     throw new Error('Password must be at least 8 characters long');
   }
   if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/.test(password)) {
-    throw new Error('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)');
+    throw new Error(
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)'
+    );
   }
   return true;
 }

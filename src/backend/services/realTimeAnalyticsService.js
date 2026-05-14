@@ -12,7 +12,7 @@ class RealTimeAnalyticsService {
         await redisClient.connect();
       }
       this.isConnected = true;
-      redisClient.on('error', (err) => {
+      redisClient.on('error', err => {
         console.error('Redis error in real-time analytics:', err);
         this.isConnected = false;
       });
@@ -347,7 +347,9 @@ class RealTimeAnalyticsService {
         });
       }
 
-      const errorKeys = Object.keys(minuteData).filter(k => k.startsWith('status:4') || k.startsWith('status:5'));
+      const errorKeys = Object.keys(minuteData).filter(
+        k => k.startsWith('status:4') || k.startsWith('status:5')
+      );
       const totalErrors = errorKeys.reduce((sum, k) => sum + minuteData[k], 0);
       const errorRate = minuteData.total > 0 ? totalErrors / minuteData.total : 0;
 
@@ -423,7 +425,7 @@ class RealTimeAnalyticsService {
             eventType,
             currentCount: currCount,
             previousCount: prevCount,
-            increase: ((currCount - prevCount) / prevCount * 100).toFixed(2) + '%'
+            increase: (((currCount - prevCount) / prevCount) * 100).toFixed(2) + '%'
           });
         }
       }

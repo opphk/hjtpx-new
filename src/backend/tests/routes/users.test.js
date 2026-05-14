@@ -1,10 +1,11 @@
-const request = require('supertest');
 const express = require('express');
-const userService = require('../../../backend/services/userService');
+const request = require('supertest');
 
-jest.mock('../../../backend/services/userService');
+const userService = require('../../services/userService');
 
-const usersRouter = require('../../../backend/routes/users');
+jest.mock('../../services/userService');
+
+const usersRouter = require('../../routes/users');
 
 const app = express();
 app.use(express.json());
@@ -18,8 +19,18 @@ describe('Users API Routes', () => {
   describe('GET /api/users', () => {
     it('should return all users', async () => {
       const mockUsers = [
-        { id: 1, email: 'user1@example.com', name: 'User One', created_at: '2026-05-14T10:30:00.000Z' },
-        { id: 2, email: 'user2@example.com', name: 'User Two', created_at: '2026-05-14T10:30:00.000Z' }
+        {
+          id: 1,
+          email: 'user1@example.com',
+          name: 'User One',
+          created_at: '2026-05-14T10:30:00.000Z'
+        },
+        {
+          id: 2,
+          email: 'user2@example.com',
+          name: 'User Two',
+          created_at: '2026-05-14T10:30:00.000Z'
+        }
       ];
 
       userService.getAllUsers.mockResolvedValue(mockUsers);
@@ -57,7 +68,12 @@ describe('Users API Routes', () => {
 
   describe('GET /api/users/:id', () => {
     it('should return user by id', async () => {
-      const mockUser = { id: 1, email: 'user@example.com', name: 'Test User', created_at: '2026-05-14T10:30:00.000Z' };
+      const mockUser = {
+        id: 1,
+        email: 'user@example.com',
+        name: 'Test User',
+        created_at: '2026-05-14T10:30:00.000Z'
+      };
 
       userService.getUserById.mockResolvedValue(mockUser);
 
@@ -94,13 +110,16 @@ describe('Users API Routes', () => {
   describe('POST /api/users', () => {
     it('should create new user', async () => {
       const newUser = { email: 'new@example.com', name: 'New User', password: 'password123' };
-      const createdUser = { id: 3, email: newUser.email, name: newUser.name, created_at: '2026-05-14T10:30:00.000Z' };
+      const createdUser = {
+        id: 3,
+        email: newUser.email,
+        name: newUser.name,
+        created_at: '2026-05-14T10:30:00.000Z'
+      };
 
       userService.createUser.mockResolvedValue(createdUser);
 
-      const response = await request(app)
-        .post('/api/users')
-        .send(newUser);
+      const response = await request(app).post('/api/users').send(newUser);
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
@@ -137,13 +156,16 @@ describe('Users API Routes', () => {
   describe('PUT /api/users/:id', () => {
     it('should update user', async () => {
       const updateData = { email: 'updated@example.com', name: 'Updated Name' };
-      const updatedUser = { id: 1, email: updateData.email, name: updateData.name, created_at: '2026-05-14T10:30:00.000Z' };
+      const updatedUser = {
+        id: 1,
+        email: updateData.email,
+        name: updateData.name,
+        created_at: '2026-05-14T10:30:00.000Z'
+      };
 
       userService.updateUser.mockResolvedValue(updatedUser);
 
-      const response = await request(app)
-        .put('/api/users/1')
-        .send(updateData);
+      const response = await request(app).put('/api/users/1').send(updateData);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);

@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const { auth } = require('../../middleware/auth');
 const { checkRole, ROLES } = require('../../middleware/rbac');
@@ -40,13 +41,16 @@ router.get('/users', async (req, res) => {
 
     const result = await req.db.query(query, params);
 
-    res.success({
-      users: result.rows,
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / limit)
-    }, 'Users retrieved successfully');
+    res.success(
+      {
+        users: result.rows,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      },
+      'Users retrieved successfully'
+    );
   } catch (error) {
     res.error(error.message, 500, 'FETCH_USERS_ERROR');
   }
@@ -148,10 +152,9 @@ router.put('/users/:id', async (req, res) => {
 
 router.delete('/users/:id', async (req, res) => {
   try {
-    const result = await req.db.query(
-      'DELETE FROM users WHERE id = $1 RETURNING id',
-      [req.params.id]
-    );
+    const result = await req.db.query('DELETE FROM users WHERE id = $1 RETURNING id', [
+      req.params.id
+    ]);
 
     if (result.rows.length === 0) {
       return res.notFound('User not found');
@@ -253,13 +256,16 @@ router.get('/logs', async (req, res) => {
 
     const result = await req.db.query(query, params);
 
-    res.success({
-      logs: result.rows,
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / limit)
-    }, 'Logs retrieved successfully');
+    res.success(
+      {
+        logs: result.rows,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      },
+      'Logs retrieved successfully'
+    );
   } catch (error) {
     res.error(error.message, 500, 'FETCH_LOGS_ERROR');
   }
@@ -305,15 +311,17 @@ router.get('/logs/export', async (req, res) => {
 
     const csv = [
       ['timestamp', 'level', 'type', 'user_id', 'action', 'ip', 'details'].join(','),
-      ...result.rows.map(row => [
-        row.timestamp,
-        row.level,
-        row.type,
-        row.user_id || '',
-        `"${(row.action || '').replace(/"/g, '""')}"`,
-        row.ip || '',
-        `"${(JSON.stringify(row.details) || '').replace(/"/g, '""')}"`
-      ].join(','))
+      ...result.rows.map(row =>
+        [
+          row.timestamp,
+          row.level,
+          row.type,
+          row.user_id || '',
+          `"${(row.action || '').replace(/"/g, '""')}"`,
+          row.ip || '',
+          `"${(JSON.stringify(row.details) || '').replace(/"/g, '""')}"`
+        ].join(',')
+      )
     ].join('\n');
 
     res.setHeader('Content-Type', 'text/csv');
@@ -330,10 +338,9 @@ router.delete('/logs/clear', async (req, res) => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
-    const result = await req.db.query(
-      'DELETE FROM logs WHERE timestamp < $1 RETURNING id',
-      [cutoffDate.toISOString()]
-    );
+    const result = await req.db.query('DELETE FROM logs WHERE timestamp < $1 RETURNING id', [
+      cutoffDate.toISOString()
+    ]);
 
     res.success({ deleted: result.rows.length }, 'Old logs cleared successfully');
   } catch (error) {
@@ -384,10 +391,20 @@ router.put('/settings/system', async (req, res) => {
   try {
     const config = req.body;
     const allowedKeys = [
-      'site_name', 'site_url', 'maintenance_mode', 'max_users',
-      'session_timeout', 'api_rate_limit', 'log_level', 'log_retention_days',
-      'cache_enabled', 'cache_ttl', 'upload_max_size', 'allowed_file_types',
-      'email_verification_required', 'password_min_length'
+      'site_name',
+      'site_url',
+      'maintenance_mode',
+      'max_users',
+      'session_timeout',
+      'api_rate_limit',
+      'log_level',
+      'log_retention_days',
+      'cache_enabled',
+      'cache_ttl',
+      'upload_max_size',
+      'allowed_file_types',
+      'email_verification_required',
+      'password_min_length'
     ];
 
     for (const [key, value] of Object.entries(config)) {
@@ -438,7 +455,10 @@ router.get('/settings/features', async (req, res) => {
       try {
         features[row.key] = { ...features[row.key], ...JSON.parse(row.value) };
       } catch {
-        features[row.key] = { enabled: row.value === 'true', description: features[row.key]?.description || '' };
+        features[row.key] = {
+          enabled: row.value === 'true',
+          description: features[row.key]?.description || ''
+        };
       }
     });
 
@@ -554,13 +574,16 @@ router.get('/audit', async (req, res) => {
 
     const result = await req.db.query(query, params);
 
-    res.success({
-      audit_logs: result.rows,
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / limit)
-    }, 'Audit logs retrieved successfully');
+    res.success(
+      {
+        audit_logs: result.rows,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      },
+      'Audit logs retrieved successfully'
+    );
   } catch (error) {
     res.error(error.message, 500, 'FETCH_AUDIT_ERROR');
   }

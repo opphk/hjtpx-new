@@ -123,10 +123,7 @@ async function search(model, options = {}) {
     if (whereConditions.length > 0) {
       countSql += ` WHERE ${whereConditions.join(' AND ')}`;
     }
-    const countResult = await pool.query(
-      countSql,
-      queryParams.slice(0, -2)
-    );
+    const countResult = await pool.query(countSql, queryParams.slice(0, -2));
     total = parseInt(countResult.rows[0].count);
   }
 
@@ -174,45 +171,47 @@ async function advancedSearch(model, options = {}) {
   let queryParams = [];
   let paramIndex = 1;
 
-  const whereClauses = conditions.map(condition => {
-    const { field, operator, value, not = false } = condition;
+  const whereClauses = conditions
+    .map(condition => {
+      const { field, operator, value, not = false } = condition;
 
-    if (operator === 'isnull') {
-      return not ? `${field} IS NOT NULL` : `${field} IS NULL`;
-    }
+      if (operator === 'isnull') {
+        return not ? `${field} IS NOT NULL` : `${field} IS NULL`;
+      }
 
-    if (operator === 'in' || operator === 'nin') {
-      const values = Array.isArray(value) ? value : value.split(',');
-      if (values.length === 0) return null;
-      const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
-      queryParams.push(...values);
-      paramIndex += values.length;
-      const sqlOp = operator === 'in' ? 'IN' : 'NOT IN';
-      const clause = `${field} ${sqlOp} (${placeholders})`;
-      return not ? `NOT (${clause})` : clause;
-    }
+      if (operator === 'in' || operator === 'nin') {
+        const values = Array.isArray(value) ? value : value.split(',');
+        if (values.length === 0) return null;
+        const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+        queryParams.push(...values);
+        paramIndex += values.length;
+        const sqlOp = operator === 'in' ? 'IN' : 'NOT IN';
+        const clause = `${field} ${sqlOp} (${placeholders})`;
+        return not ? `NOT (${clause})` : clause;
+      }
 
-    if (operator === 'between') {
-      if (!Array.isArray(value) || value.length !== 2) return null;
-      queryParams.push(value[0], value[1]);
-      const clause = `${field} BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
-      paramIndex += 2;
-      return not ? `NOT (${clause})` : clause;
-    }
+      if (operator === 'between') {
+        if (!Array.isArray(value) || value.length !== 2) return null;
+        queryParams.push(value[0], value[1]);
+        const clause = `${field} BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+        paramIndex += 2;
+        return not ? `NOT (${clause})` : clause;
+      }
 
-    if (operator === 'like' || operator === 'ilike') {
-      queryParams.push(`%${value}%`);
-      const clause = `${field} ${operator === 'ilike' ? 'ILIKE' : 'LIKE'} $${paramIndex}`;
+      if (operator === 'like' || operator === 'ilike') {
+        queryParams.push(`%${value}%`);
+        const clause = `${field} ${operator === 'ilike' ? 'ILIKE' : 'LIKE'} $${paramIndex}`;
+        paramIndex++;
+        return not ? `NOT (${clause})` : clause;
+      }
+
+      const sqlOp = FILTER_OPERATORS[operator] || '=';
+      queryParams.push(value);
+      const clause = `${field} ${sqlOp} $${paramIndex}`;
       paramIndex++;
       return not ? `NOT (${clause})` : clause;
-    }
-
-    const sqlOp = FILTER_OPERATORS[operator] || '=';
-    queryParams.push(value);
-    const clause = `${field} ${sqlOp} $${paramIndex}`;
-    paramIndex++;
-    return not ? `NOT (${clause})` : clause;
-  }).filter(Boolean);
+    })
+    .filter(Boolean);
 
   if (whereClauses.length === 0) {
     throw new Error('No valid conditions provided');

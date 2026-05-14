@@ -1,4 +1,4 @@
-const db = require('../../config/database/db');
+const db = require('../../../config/database/db');
 
 class QueryOptimizer {
   constructor() {
@@ -13,7 +13,7 @@ class QueryOptimizer {
 
   async cachedQuery(query, params, ttl = 60) {
     const key = this.cacheKey(query, params);
-    
+
     const cachedResult = this.queryCache.get(key);
     if (cachedResult && Date.now() - cachedResult.timestamp < ttl * 1000) {
       return cachedResult.data;
@@ -44,7 +44,7 @@ class QueryOptimizer {
     const client = await db.getClient();
     try {
       await client.query('BEGIN');
-      
+
       const results = await Promise.all(
         queries.map(async ({ query, params }) => {
           const result = await client.query(query, params);
@@ -70,17 +70,19 @@ class QueryOptimizer {
     const returning = 'RETURNING *';
 
     const allResults = [];
-    
+
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
       const values = batch.flatMap(row => columns.map(col => row[col]));
-      
+
       const paramOffset = i * columns.length;
-      const batchPlaceholders = batch.map((_, rowIndex) => {
-        return `(${columns.map((_, colIndex) => 
-          `$${paramOffset + rowIndex * columns.length + colIndex + 1}`
-        ).join(', ')})`;
-      }).join(', ');
+      const batchPlaceholders = batch
+        .map((_, rowIndex) => {
+          return `(${columns
+            .map((_, colIndex) => `$${paramOffset + rowIndex * columns.length + colIndex + 1}`)
+            .join(', ')})`;
+        })
+        .join(', ');
 
       const query = `
         INSERT INTO ${table} (${columns.join(', ')})
@@ -99,14 +101,14 @@ class QueryOptimizer {
     if (updates.length === 0) return [];
 
     const allResults = [];
-    
+
     for (let i = 0; i < updates.length; i += batchSize) {
       const batch = updates.slice(i, i + batchSize);
       const client = await db.getClient();
-      
+
       try {
         await client.query('BEGIN');
-        
+
         for (const update of batch) {
           const id = update[idColumn];
           const updateData = { ...update };
@@ -115,20 +117,20 @@ class QueryOptimizer {
           const setClause = Object.keys(updateData)
             .map((key, idx) => `${key} = $${idx + 1}`)
             .join(', ');
-          
+
           const values = [...Object.values(updateData), id];
-          
+
           const query = `
             UPDATE ${table}
             SET ${setClause}, updated_at = CURRENT_TIMESTAMP
             WHERE ${idColumn} = $${values.length}
             RETURNING *
           `;
-          
+
           const result = await client.query(query, values);
           allResults.push(...result.rows);
         }
-        
+
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -143,7 +145,7 @@ class QueryOptimizer {
 
   async paginatedQuery(query, params, page = 1, pageSize = 20) {
     const offset = (page - 1) * pageSize;
-    
+
     const countQuery = query.replace(/SELECT .+ FROM/, 'SELECT COUNT(*) as total FROM');
     const countResult = await db.query(countQuery, params);
     const total = parseInt(countResult.rows[0]?.total || 0);

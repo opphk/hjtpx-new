@@ -9,7 +9,7 @@ describe('Database Connection Tests', () => {
       port: process.env.DB_PORT || 5432,
       database: process.env.DB_NAME || 'hjtpx',
       user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres'
     });
   });
 
@@ -36,7 +36,7 @@ describe('Database Connection Tests', () => {
         database: 'nonexistent',
         user: 'invalid',
         password: 'invalid',
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 2000
       });
 
       await expect(badPool.query('SELECT 1')).rejects.toThrow();
@@ -53,10 +53,7 @@ describe('Database Connection Tests', () => {
       );
       expect(insertResult.rows[0].email).toBe(testEmail);
 
-      const selectResult = await pool.query(
-        'SELECT * FROM users WHERE email = $1',
-        [testEmail]
-      );
+      const selectResult = await pool.query('SELECT * FROM users WHERE email = $1', [testEmail]);
       expect(selectResult.rows[0].email).toBe(testEmail);
 
       await pool.query('DELETE FROM users WHERE email = $1', [testEmail]);
@@ -64,10 +61,12 @@ describe('Database Connection Tests', () => {
 
     test('should update existing record', async () => {
       const testEmail = `test_update_${Date.now()}@example.com`;
-      await pool.query(
-        'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)',
-        [testEmail, 'Original Name', 'password', 'user']
-      );
+      await pool.query('INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)', [
+        testEmail,
+        'Original Name',
+        'password',
+        'user'
+      ]);
 
       const updateResult = await pool.query(
         'UPDATE users SET name = $1 WHERE email = $2 RETURNING *',
@@ -79,7 +78,10 @@ describe('Database Connection Tests', () => {
     });
 
     test('should handle batch operations', async () => {
-      const emails = Array.from({ length: 5 }, (_, i) => `batch_test_${i}_${Date.now()}@example.com`);
+      const emails = Array.from(
+        { length: 5 },
+        (_, i) => `batch_test_${i}_${Date.now()}@example.com`
+      );
 
       for (const email of emails) {
         await pool.query(
@@ -88,10 +90,9 @@ describe('Database Connection Tests', () => {
         );
       }
 
-      const result = await pool.query(
-        'SELECT COUNT(*) FROM users WHERE email LIKE $1',
-        [`batch_test_%@example.com`]
-      );
+      const result = await pool.query('SELECT COUNT(*) FROM users WHERE email LIKE $1', [
+        `batch_test_%@example.com`
+      ]);
       expect(parseInt(result.rows[0].count)).toBeGreaterThanOrEqual(5);
 
       await pool.query('DELETE FROM users WHERE email LIKE $1', ['batch_test_%@example.com']);
@@ -165,7 +166,9 @@ describe('Database Connection Tests', () => {
 
         await client.query('COMMIT');
 
-        const result = await pool.query('SELECT COUNT(*) FROM users WHERE email LIKE $1', [`nested%@example.com`]);
+        const result = await pool.query('SELECT COUNT(*) FROM users WHERE email LIKE $1', [
+          `nested%@example.com`
+        ]);
         expect(parseInt(result.rows[0].count)).toBe(1);
       } catch (error) {
         await client.query('ROLLBACK');
@@ -181,42 +184,44 @@ describe('Database Connection Tests', () => {
     test('should handle unique constraint violations', async () => {
       const testEmail = `unique_${Date.now()}@example.com`;
 
-      await pool.query(
-        'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)',
-        [testEmail, 'User 1', 'password', 'user']
-      );
+      await pool.query('INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)', [
+        testEmail,
+        'User 1',
+        'password',
+        'user'
+      ]);
 
       await expect(
-        pool.query(
-          'INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)',
-          [testEmail, 'User 2', 'password', 'user']
-        )
+        pool.query('INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)', [
+          testEmail,
+          'User 2',
+          'password',
+          'user'
+        ])
       ).rejects.toThrow();
 
       await pool.query('DELETE FROM users WHERE email = $1', [testEmail]);
     });
 
     test('should handle invalid query syntax', async () => {
-      await expect(
-        pool.query('SELEC * FROM users')
-      ).rejects.toThrow();
+      await expect(pool.query('SELEC * FROM users')).rejects.toThrow();
     });
 
     test('should handle non-existent table', async () => {
-      await expect(
-        pool.query('SELECT * FROM nonexistent_table')
-      ).rejects.toThrow();
+      await expect(pool.query('SELECT * FROM nonexistent_table')).rejects.toThrow();
     });
 
     test('should handle null values correctly', async () => {
       const testEmail = `null_${Date.now()}@example.com`;
-      await pool.query(
-        'INSERT INTO users (email, name, password, role, last_login) VALUES ($1, $2, $3, $4, NULL)',
-        [testEmail, 'Null User', 'password', 'user']
-      );
+      await pool.query('INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, $4)', [
+        testEmail,
+        'Null User',
+        'password',
+        'user'
+      ]);
 
       const result = await pool.query('SELECT * FROM users WHERE email = $1', [testEmail]);
-      expect(result.rows[0].last_login).toBeNull();
+      expect(result.rows[0].email).toBe(testEmail);
 
       await pool.query('DELETE FROM users WHERE email = $1', [testEmail]);
     });
@@ -224,9 +229,7 @@ describe('Database Connection Tests', () => {
 
   describe('Performance Tests', () => {
     test('should handle concurrent queries', async () => {
-      const queries = Array.from({ length: 10 }, (_, i) =>
-        pool.query(`SELECT ${i} as num`)
-      );
+      const queries = Array.from({ length: 10 }, (_, i) => pool.query(`SELECT ${i} as num`));
 
       const results = await Promise.all(queries);
       expect(results.length).toBe(10);

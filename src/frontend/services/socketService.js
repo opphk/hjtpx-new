@@ -44,18 +44,18 @@ class SocketService {
       this.emit('connection:established', { socketId: this.socket.id });
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', reason => {
       console.log('Socket disconnected:', reason);
       this.isConnected = false;
       this.emit('connection:lost', { reason });
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', error => {
       console.error('Socket connection error:', error.message);
       this.reconnectAttempts++;
-      this.emit('connection:error', { 
+      this.emit('connection:error', {
         error: error.message,
-        attempts: this.reconnectAttempts 
+        attempts: this.reconnectAttempts
       });
 
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -63,18 +63,18 @@ class SocketService {
       }
     });
 
-    this.socket.on('reconnect', (attemptNumber) => {
+    this.socket.on('reconnect', attemptNumber => {
       console.log('Socket reconnected after', attemptNumber, 'attempts');
       this.isConnected = true;
       this.emit('connection:restored', { attemptNumber });
     });
 
-    this.socket.on('reconnect_attempt', (attemptNumber) => {
+    this.socket.on('reconnect_attempt', attemptNumber => {
       console.log('Socket reconnection attempt:', attemptNumber);
       this.emit('connection:reconnecting', { attemptNumber });
     });
 
-    this.socket.on('error', (error) => {
+    this.socket.on('error', error => {
       console.error('Socket error:', error);
       this.emit('socket:error', error);
     });
@@ -110,7 +110,7 @@ class SocketService {
   }
 
   setupGlobalListener(event) {
-    this.socket.on(event, (data) => {
+    this.socket.on(event, data => {
       const callbacks = this.listeners.get(event);
       if (callbacks) {
         callbacks.forEach(callback => {
@@ -143,7 +143,7 @@ class SocketService {
         reject(new Error('Socket not connected'));
         return;
       }
-      this.socket.emit('join', room, (response) => {
+      this.socket.emit('join', room, response => {
         if (response.success) {
           resolve(response);
         } else {
@@ -159,7 +159,7 @@ class SocketService {
         reject(new Error('Socket not connected'));
         return;
       }
-      this.socket.emit('leave', room, (response) => {
+      this.socket.emit('leave', room, response => {
         if (response.success) {
           resolve(response);
         } else {
@@ -175,7 +175,7 @@ class SocketService {
         reject(new Error('Socket not connected'));
         return;
       }
-      this.socket.emit('subscribe', channel, (response) => {
+      this.socket.emit('subscribe', channel, response => {
         if (response.success) {
           resolve(response);
         } else {
@@ -191,7 +191,7 @@ class SocketService {
         reject(new Error('Socket not connected'));
         return;
       }
-      this.socket.emit('unsubscribe', channel, (response) => {
+      this.socket.emit('unsubscribe', channel, response => {
         if (response.success) {
           resolve(response);
         } else {
@@ -207,7 +207,7 @@ class SocketService {
         reject(new Error('Socket not connected'));
         return;
       }
-      this.socket.emit('message', data, (response) => {
+      this.socket.emit('message', data, response => {
         if (response.success) {
           resolve(response);
         } else {
@@ -223,7 +223,7 @@ class SocketService {
         reject(new Error('Socket not connected'));
         return;
       }
-      this.socket.emit('broadcast', { ...data, room }, (response) => {
+      this.socket.emit('broadcast', { ...data, room }, response => {
         if (response.success) {
           resolve(response);
         } else {

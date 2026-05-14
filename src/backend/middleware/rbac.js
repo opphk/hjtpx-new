@@ -98,7 +98,10 @@ function isUser(req) {
 }
 
 function isGuest(req) {
-  return req.user && (req.user.role === ROLES.GUEST || req.user.role === ROLES.USER || req.user.role === ROLES.ADMIN);
+  return (
+    req.user &&
+    (req.user.role === ROLES.GUEST || req.user.role === ROLES.USER || req.user.role === ROLES.ADMIN)
+  );
 }
 
 module.exports = {

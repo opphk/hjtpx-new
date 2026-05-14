@@ -5,7 +5,7 @@ const performanceMonitor = {
     errors: [],
     endpoints: new Map()
   },
-  
+
   maxMetricsHistory: 1000,
   slowRequestThreshold: parseInt(process.env.SLOW_REQUEST_THRESHOLD) || 3000,
 
@@ -64,12 +64,14 @@ const performanceMonitor = {
     }
 
     if (req.analyticsService) {
-      req.analyticsService.recordApiPerformance(
-        req.route?.path || req.path,
-        req.method,
-        Math.round(duration),
-        res.statusCode
-      ).catch(err => console.error('Failed to record API performance:', err));
+      req.analyticsService
+        .recordApiPerformance(
+          req.route?.path || req.path,
+          req.method,
+          Math.round(duration),
+          res.statusCode
+        )
+        .catch(err => console.error('Failed to record API performance:', err));
     }
   },
 
@@ -95,23 +97,23 @@ const performanceMonitor = {
     const now = Date.now();
     const last24h = new Date(now - 24 * 60 * 60 * 1000);
 
-    const recentRequests = this.metrics.requests.filter(
-      r => new Date(r.timestamp) > last24h
-    );
+    const recentRequests = this.metrics.requests.filter(r => new Date(r.timestamp) > last24h);
 
     const responseTimes = recentRequests.map(r => r.duration);
-    const avgResponseTime = responseTimes.length > 0
-      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-      : 0;
+    const avgResponseTime =
+      responseTimes.length > 0
+        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+        : 0;
 
     const statusCodes = recentRequests.reduce((acc, r) => {
       acc[r.statusCode] = (acc[r.statusCode] || 0) + 1;
       return acc;
     }, {});
 
-    const endpointsArray = Array.from(this.metrics.endpoints.entries()).map(
-      ([key, value]) => ({ endpoint: key, ...value })
-    );
+    const endpointsArray = Array.from(this.metrics.endpoints.entries()).map(([key, value]) => ({
+      endpoint: key,
+      ...value
+    }));
 
     return {
       summary: {
@@ -178,7 +180,9 @@ function performanceMiddleware(req, res, next) {
     performanceMonitor.recordRequest(req, res, duration);
 
     if (duration > performanceMonitor.slowRequestThreshold) {
-      console.warn(`[PERFORMANCE] Slow request: ${req.method} ${req.path} took ${duration.toFixed(2)}ms`);
+      console.warn(
+        `[PERFORMANCE] Slow request: ${req.method} ${req.path} took ${duration.toFixed(2)}ms`
+      );
     }
   });
 
@@ -233,7 +237,8 @@ function createDatabaseMonitor() {
     getMetrics() {
       return {
         totalQueries: dbMetrics.totalQueries,
-        avgDuration: dbMetrics.totalQueries > 0 ? dbMetrics.totalDuration / dbMetrics.totalQueries : 0,
+        avgDuration:
+          dbMetrics.totalQueries > 0 ? dbMetrics.totalDuration / dbMetrics.totalQueries : 0,
         slowQueries: dbMetrics.slowQueries.length,
         errors: dbMetrics.errors,
         recentQueries: dbMetrics.queries.slice(-20)

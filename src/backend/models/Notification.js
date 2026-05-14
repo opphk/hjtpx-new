@@ -11,16 +11,7 @@ const notificationSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: [
-        'info',
-        'success',
-        'warning',
-        'error',
-        'system',
-        'message',
-        'reminder',
-        'alert'
-      ],
+      enum: ['info', 'success', 'warning', 'error', 'system', 'message', 'reminder', 'alert'],
       default: 'info'
     },
     title: {
@@ -102,10 +93,7 @@ notificationSchema.statics.createBulkNotifications = async function (notificatio
   return this.insertMany(notifications, { ordered: false });
 };
 
-notificationSchema.statics.getUserNotifications = async function (
-  userId,
-  options = {}
-) {
+notificationSchema.statics.getUserNotifications = async function (userId, options = {}) {
   const {
     status = null,
     type = null,
@@ -143,17 +131,11 @@ notificationSchema.statics.getUnreadCount = async function (userId) {
 };
 
 notificationSchema.statics.markAsRead = async function (notificationId, userId) {
-  return this.updateOne(
-    { _id: notificationId, userId },
-    { status: 'read', readAt: new Date() }
-  );
+  return this.updateOne({ _id: notificationId, userId }, { status: 'read', readAt: new Date() });
 };
 
 notificationSchema.statics.markAllAsRead = async function (userId) {
-  return this.updateMany(
-    { userId, status: 'unread' },
-    { status: 'read', readAt: new Date() }
-  );
+  return this.updateMany({ userId, status: 'unread' }, { status: 'read', readAt: new Date() });
 };
 
 notificationSchema.statics.archiveOld = async function (daysOld = 30) {

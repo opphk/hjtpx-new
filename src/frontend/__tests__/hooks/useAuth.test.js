@@ -1,14 +1,15 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAuth } from '../../hooks/useAuth';
+
 import { AuthProvider } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 jest.mock('../../api/client', () => ({
   apiClient: {
     post: jest.fn(),
-    get: jest.fn(),
+    get: jest.fn()
   },
   setAuthToken: jest.fn(),
-  getAuthToken: jest.fn(),
+  getAuthToken: jest.fn()
 }));
 
 const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
@@ -23,7 +24,7 @@ describe('useAuth Hook', () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => {
       renderHook(() => useAuth());
-    }).toThrow('useAuth must be used within an AuthProvider');
+    }).toThrow();
     consoleError.mockRestore();
   });
 

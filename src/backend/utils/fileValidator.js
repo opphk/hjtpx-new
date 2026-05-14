@@ -1,4 +1,5 @@
 const path = require('path');
+
 const { fileTypeFromBuffer } = require('file-type');
 
 const ALLOWED_EXTENSIONS = {
@@ -24,11 +25,7 @@ const ALLOWED_MIME_TYPES = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain'
   ],
-  archive: [
-    'application/zip',
-    'application/x-tar',
-    'application/gzip'
-  ]
+  archive: ['application/zip', 'application/x-tar', 'application/gzip']
 };
 
 const MAX_FILE_SIZES = {

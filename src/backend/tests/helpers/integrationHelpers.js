@@ -14,18 +14,18 @@ async function startTestServer() {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    testServer.stdout.on('data', (data) => {
+    testServer.stdout.on('data', data => {
       console.log(`Server: ${data}`);
       if (data.toString().includes('running on port')) {
         setTimeout(() => resolve(testServer), 1000);
       }
     });
 
-    testServer.stderr.on('data', (data) => {
+    testServer.stderr.on('data', data => {
       console.error(`Server error: ${data}`);
     });
 
-    testServer.on('error', (error) => {
+    testServer.on('error', error => {
       console.error('Failed to start server:', error);
       reject(error);
     });
@@ -49,7 +49,7 @@ async function stopTestServer() {
 async function sendRequest(method, path, body = null, token = null) {
   const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:3001';
   const url = `${baseUrl}${path}`;
-  
+
   const options = {
     method,
     headers: {
@@ -58,7 +58,7 @@ async function sendRequest(method, path, body = null, token = null) {
   };
 
   if (token) {
-    options.headers['Authorization'] = `Bearer ${token}`;
+    options.headers.Authorization = `Bearer ${token}`;
   }
 
   if (body) {
@@ -83,7 +83,7 @@ async function sendRequest(method, path, body = null, token = null) {
 
 async function verifyResponse(response, expectedStatus, expectedFields = []) {
   expect(response.status).toBe(expectedStatus);
-  
+
   if (expectedFields.length > 0) {
     expectedFields.forEach(field => {
       expect(response.data).toHaveProperty(field);

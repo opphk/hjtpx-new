@@ -1,6 +1,6 @@
-const userService = require('../../../backend/services/userService');
+const userService = require('../../services/userService');
 
-jest.mock('../../../config/database/db', () => ({
+jest.mock('../../../../src/config/database/db', () => ({
   query: jest.fn()
 }));
 
@@ -9,7 +9,8 @@ jest.mock('bcrypt', () => ({
   compare: jest.fn()
 }));
 
-const pool = require('../../../config/database/db');
+const pool = require('../../../../src/config/database/db');
+
 const bcrypt = require('bcrypt');
 
 describe('UserService', () => {
@@ -51,7 +52,12 @@ describe('UserService', () => {
 
   describe('getUserById', () => {
     it('should return user when found', async () => {
-      const mockUser = { id: 1, email: 'user@example.com', name: 'Test User', created_at: new Date() };
+      const mockUser = {
+        id: 1,
+        email: 'user@example.com',
+        name: 'Test User',
+        created_at: new Date()
+      };
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
 
@@ -195,8 +201,9 @@ describe('UserService', () => {
     it('should handle database errors', async () => {
       pool.query.mockRejectedValue(new Error('Update failed'));
 
-      await expect(userService.updateUser(1, { email: 'test@example.com' }))
-        .rejects.toThrow('Update failed');
+      await expect(userService.updateUser(1, { email: 'test@example.com' })).rejects.toThrow(
+        'Update failed'
+      );
     });
   });
 
@@ -205,10 +212,7 @@ describe('UserService', () => {
       pool.query.mockResolvedValue({ rows: [] });
 
       await expect(userService.deleteUser(1)).resolves.toBeUndefined();
-      expect(pool.query).toHaveBeenCalledWith(
-        'DELETE FROM users WHERE id = $1',
-        [1]
-      );
+      expect(pool.query).toHaveBeenCalledWith('DELETE FROM users WHERE id = $1', [1]);
     });
 
     it('should handle database errors during deletion', async () => {

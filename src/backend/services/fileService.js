@@ -1,7 +1,9 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+
 const { v4: uuidv4 } = require('uuid');
+
 const pool = require('../../../config/database/db');
 
 const STORAGE_PROVIDERS = {
@@ -112,7 +114,8 @@ async function getUserFiles(userId, options = {}) {
     values.push(folder);
   }
 
-  query += ' ORDER BY created_at DESC LIMIT $' + (values.length + 1) + ' OFFSET $' + (values.length + 2);
+  query +=
+    ' ORDER BY created_at DESC LIMIT $' + (values.length + 1) + ' OFFSET $' + (values.length + 2);
   values.push(limit, offset);
 
   const [files, countResult] = await Promise.all([
@@ -153,10 +156,10 @@ async function deleteFile(fileId, userId) {
 }
 
 async function deleteFolder(userId, folder) {
-  const result = await pool.query(
-    'SELECT path FROM files WHERE user_id = $1 AND folder = $2',
-    [userId, folder]
-  );
+  const result = await pool.query('SELECT path FROM files WHERE user_id = $1 AND folder = $2', [
+    userId,
+    folder
+  ]);
 
   for (const file of result.rows) {
     if (fs.existsSync(file.path)) {

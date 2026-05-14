@@ -1,5 +1,6 @@
+const { logInfo: loggerInfo, logWarning: loggerWarn } = require('../middleware/logger');
 const WebSocketServer = require('../websocket');
-const { logger } = require('../middleware/logger');
+
 const notificationService = require('./notificationService');
 
 class WebSocketService {
@@ -13,7 +14,7 @@ class WebSocketService {
 
   initialize(httpServer) {
     if (this.io) {
-      logger.warn('WebSocket server already initialized');
+      loggerWarn('WebSocket server already initialized');
       return;
     }
 
@@ -23,7 +24,7 @@ class WebSocketService {
 
     this.startPresenceChecker();
 
-    logger.info('WebSocket service initialized');
+    loggerInfo('WebSocket service initialized');
   }
 
   setupNotificationHandlers() {
@@ -120,14 +121,18 @@ class WebSocketService {
   }
 
   broadcastNotification(notification, room = 'notifications') {
-    this.io.broadcast('notification', {
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      data: notification.data,
-      priority: notification.priority || 'normal',
-      timestamp: new Date()
-    }, room);
+    this.io.broadcast(
+      'notification',
+      {
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        data: notification.data,
+        priority: notification.priority || 'normal',
+        timestamp: new Date()
+      },
+      room
+    );
   }
 
   async pushDataUpdate(userId, entityType, entityId, action, data) {
@@ -147,13 +152,17 @@ class WebSocketService {
   }
 
   async broadcastDataUpdate(entityType, entityId, action, data, room = null) {
-    this.io.broadcast('data:update', {
-      entityType,
-      entityId,
-      action,
-      data,
-      timestamp: new Date()
-    }, room);
+    this.io.broadcast(
+      'data:update',
+      {
+        entityType,
+        entityId,
+        action,
+        data,
+        timestamp: new Date()
+      },
+      room
+    );
   }
 
   notifyUserOnline(userId) {
@@ -188,12 +197,15 @@ class WebSocketService {
     if (attempts < this.maxReconnectAttempts) {
       this.reconnectAttempts.set(userId, attempts + 1);
 
-      setTimeout(() => {
-        this.io.sendToUser(userId, 'reconnected', {
-          socketId,
-          timestamp: new Date()
-        });
-      }, this.reconnectDelay * (attempts + 1));
+      setTimeout(
+        () => {
+          this.io.sendToUser(userId, 'reconnected', {
+            socketId,
+            timestamp: new Date()
+          });
+        },
+        this.reconnectDelay * (attempts + 1)
+      );
     } else {
       logger.warn('Max reconnection attempts reached', { userId });
       this.reconnectAttempts.delete(userId);

@@ -1,22 +1,15 @@
 const express = require('express');
+
 const router = express.Router();
-const searchService = require('../services/searchService');
 const { authMiddleware } = require('../middleware/auth');
+const searchService = require('../services/searchService');
 
 router.use(authMiddleware);
 
 router.get('/:model', async (req, res, next) => {
   try {
     const { model } = req.params;
-    const {
-      q,
-      filter,
-      sort,
-      page,
-      limit,
-      fields,
-      include_count
-    } = req.query;
+    const { q, filter, sort, page, limit, fields, include_count } = req.query;
 
     const filters = filter ? parseFilter(filter) : {};
 
@@ -46,15 +39,7 @@ router.get('/:model', async (req, res, next) => {
 router.post('/:model/advanced', async (req, res, next) => {
   try {
     const { model } = req.params;
-    const {
-      conditions,
-      logic = 'AND',
-      sort,
-      pagination,
-      fields,
-      groupBy,
-      having
-    } = req.body;
+    const { conditions, logic = 'AND', sort, pagination, fields, groupBy, having } = req.body;
 
     const result = await searchService.advancedSearch(model, {
       conditions,

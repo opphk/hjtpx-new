@@ -50,21 +50,29 @@ class CacheWarmupService {
   }
 
   registerUserCacheWarmup() {
-    this.registerWarmup('users:all', async () => {
-      const userService = require('../services/userService');
-      return userService.getAllUsers();
-    }, 300);
+    this.registerWarmup(
+      'users:all',
+      async () => {
+        const userService = require('../services/userService');
+        return userService.getAllUsers();
+      },
+      300
+    );
   }
 
   registerStatsWarmup() {
-    this.registerWarmup('system:stats', async () => {
-      const db = require('../../config/database/db');
-      const result = await db.query('SELECT COUNT(*) as count FROM users');
-      return {
-        userCount: result.rows[0]?.count || 0,
-        timestamp: new Date().toISOString()
-      };
-    }, 60);
+    this.registerWarmup(
+      'system:stats',
+      async () => {
+        const db = require('../../../config/database/db');
+        const result = await db.query('SELECT COUNT(*) as count FROM users');
+        return {
+          userCount: result.rows[0]?.count || 0,
+          timestamp: new Date().toISOString()
+        };
+      },
+      60
+    );
   }
 
   startAutoWarmup() {

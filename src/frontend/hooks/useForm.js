@@ -6,74 +6,83 @@ export function useForm({ initialValues = {}, validate, onSubmit }) {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setValues((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleChange = useCallback(
+    e => {
+      const { name, value } = e.target;
+      setValues(prev => ({
+        ...prev,
+        [name]: value
+      }));
 
-    setTouched((prev) => ({
-      ...prev,
-      [name]: true
-    }));
+      setTouched(prev => ({
+        ...prev,
+        [name]: true
+      }));
 
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  }, [errors]);
-
-  const handleBlur = useCallback((e) => {
-    const { name } = e.target;
-    setTouched((prev) => ({
-      ...prev,
-      [name]: true
-    }));
-
-    if (validate) {
-      const validationErrors = validate(values);
-      if (validationErrors[name]) {
-        setErrors((prev) => ({
-          ...prev,
-          [name]: validationErrors[name]
-        }));
+      if (errors[name]) {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
       }
-    }
-  }, [validate, values]);
+    },
+    [errors]
+  );
 
-  const handleSubmit = useCallback((e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
+  const handleBlur = useCallback(
+    e => {
+      const { name } = e.target;
+      setTouched(prev => ({
+        ...prev,
+        [name]: true
+      }));
 
-    setIsSubmitting(true);
-
-    if (validate) {
-      const validationErrors = validate(values);
-      setErrors(validationErrors);
-
-      const allTouched = Object.keys(values).reduce((acc, key) => {
-        acc[key] = true;
-        return acc;
-      }, {});
-      setTouched(allTouched);
-
-      if (Object.keys(validationErrors).length > 0) {
-        setIsSubmitting(false);
-        return;
+      if (validate) {
+        const validationErrors = validate(values);
+        if (validationErrors[name]) {
+          setErrors(prev => ({
+            ...prev,
+            [name]: validationErrors[name]
+          }));
+        }
       }
-    }
+    },
+    [validate, values]
+  );
 
-    if (onSubmit) {
-      onSubmit(values);
-    }
+  const handleSubmit = useCallback(
+    e => {
+      if (e && e.preventDefault) {
+        e.preventDefault();
+      }
 
-    setIsSubmitting(false);
-  }, [values, validate, onSubmit]);
+      setIsSubmitting(true);
+
+      if (validate) {
+        const validationErrors = validate(values);
+        setErrors(validationErrors);
+
+        const allTouched = Object.keys(values).reduce((acc, key) => {
+          acc[key] = true;
+          return acc;
+        }, {});
+        setTouched(allTouched);
+
+        if (Object.keys(validationErrors).length > 0) {
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (onSubmit) {
+        onSubmit(values);
+      }
+
+      setIsSubmitting(false);
+    },
+    [values, validate, onSubmit]
+  );
 
   const reset = useCallback(() => {
     setValues(initialValues);
@@ -83,7 +92,7 @@ export function useForm({ initialValues = {}, validate, onSubmit }) {
   }, [initialValues]);
 
   const setValue = useCallback((name, value) => {
-    setValues((prev) => ({
+    setValues(prev => ({
       ...prev,
       [name]: value
     }));

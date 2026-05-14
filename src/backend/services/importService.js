@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+
 const { parse } = require('csv-parse/sync');
+
 const pool = require('../../../config/database/db');
 
 const ALLOWED_FILE_TYPES = ['csv', 'json'];
@@ -109,15 +111,16 @@ async function importRecords(records, tableName, options = {}) {
     const batch = records.slice(i, i + batchSize);
 
     try {
-      const values = batch.map(record =>
-        columns.map(col => record[col])
-      );
+      const values = batch.map(record => columns.map(col => record[col]));
 
-      const placeholders = batch.map((_, rowIndex) =>
-        `(${columns.map((_, colIndex) =>
-          `$${rowIndex * columns.length + colIndex + 1}`
-        ).join(', ')})`
-      ).join(', ');
+      const placeholders = batch
+        .map(
+          (_, rowIndex) =>
+            `(${columns
+              .map((_, colIndex) => `$${rowIndex * columns.length + colIndex + 1}`)
+              .join(', ')})`
+        )
+        .join(', ');
 
       const query = `
         INSERT INTO ${tableName} (${columns.join(', ')})

@@ -1,10 +1,12 @@
 const express = require('express');
+
 const router = express.Router();
 const path = require('path');
-const fileService = require('../services/fileService');
+
 const { authMiddleware } = require('../middleware/auth');
-const { uploadMiddleware } = require('../middleware/upload');
 const { requireRole } = require('../middleware/roleCheck');
+const { uploadMiddleware } = require('../middleware/upload');
+const fileService = require('../services/fileService');
 
 router.use(authMiddleware);
 

@@ -1,9 +1,10 @@
-const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const pool = require('../../../config/database/db');
+const request = require('supertest');
 
-jest.mock('../../../config/database/db', () => ({
+const pool = require('../../../../src/config/database/db');
+
+jest.mock('../../../../src/config/database/db', () => ({
   query: jest.fn()
 }));
 
@@ -92,12 +93,10 @@ describe('Login Authentication', () => {
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'password123'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123'
+      });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -121,12 +120,10 @@ describe('Login Authentication', () => {
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'user@example.com',
-          password: 'securePassword'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'user@example.com',
+        password: 'securePassword'
+      });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -150,12 +147,10 @@ describe('Login Authentication', () => {
       pool.query.mockResolvedValue({ rows: [mockUser] });
       bcrypt.compare.mockResolvedValue(false);
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'wrongPassword'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'wrongPassword'
+      });
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -174,12 +169,10 @@ describe('Login Authentication', () => {
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: ''
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: ''
+      });
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -191,12 +184,10 @@ describe('Login Authentication', () => {
     it('should reject login for non-existent user', async () => {
       pool.query.mockResolvedValue({ rows: [] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: 'somePassword'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'nonexistent@example.com',
+        password: 'somePassword'
+      });
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -210,12 +201,10 @@ describe('Login Authentication', () => {
     it('should reject login with empty email field', async () => {
       pool.query.mockResolvedValue({ rows: [] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: '',
-          password: 'somePassword'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: '',
+        password: 'somePassword'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -235,12 +224,10 @@ describe('Login Authentication', () => {
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'password123'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123'
+      });
 
       const token = response.body.data.token;
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret-key');
@@ -262,12 +249,10 @@ describe('Login Authentication', () => {
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'password123'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123'
+      });
 
       const token = response.body.data.token;
       const decoded = jwt.decode(token);
@@ -287,11 +272,9 @@ describe('Login Authentication', () => {
 
   describe('input validation', () => {
     it('should reject request without email', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          password: 'password123'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        password: 'password123'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -299,11 +282,9 @@ describe('Login Authentication', () => {
     });
 
     it('should reject request without password', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -311,9 +292,7 @@ describe('Login Authentication', () => {
     });
 
     it('should reject request with empty body', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({});
+      const response = await request(app).post('/api/auth/login').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -325,12 +304,10 @@ describe('Login Authentication', () => {
     it('should handle database connection errors', async () => {
       pool.query.mockRejectedValue(new Error('Database connection failed'));
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'password123'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123'
+      });
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
@@ -349,12 +326,10 @@ describe('Login Authentication', () => {
       pool.query.mockResolvedValue({ rows: [mockUser] });
       bcrypt.compare.mockRejectedValue(new Error('Bcrypt error'));
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'password123'
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123'
+      });
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);

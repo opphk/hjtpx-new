@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+
 import { apiClient } from '../api/client';
 
 export function useApi() {
@@ -65,7 +66,7 @@ export function useApi() {
     }
   }, []);
 
-  const del = useCallback(async (url) => {
+  const del = useCallback(async url => {
     setLoading(true);
     setError(null);
     try {

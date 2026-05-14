@@ -1,14 +1,32 @@
-const pool = require('../../../config/database/db');
-const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+
+const bcrypt = require('bcrypt');
+
+const pool = require('../../../config/database/db');
 
 const SESSION_TIMEOUT = 30 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000;
-const SENSITIVE_OPERATIONS = ['delete', 'update_role', 'reset_password', 'export_data', 'import_data', 'change_settings'];
+const SENSITIVE_OPERATIONS = [
+  'delete',
+  'update_role',
+  'reset_password',
+  'export_data',
+  'import_data',
+  'change_settings'
+];
 
 const PERMISSIONS = {
-  admin: ['read', 'write', 'delete', 'manage_users', 'manage_settings', 'view_audit', 'export', 'import'],
+  admin: [
+    'read',
+    'write',
+    'delete',
+    'manage_users',
+    'manage_settings',
+    'view_audit',
+    'export',
+    'import'
+  ],
   moderator: ['read', 'write', 'delete', 'view_audit'],
   user: ['read', 'write']
 };
@@ -23,10 +41,7 @@ const SENSITIVE_OPERATION_RULES = {
 };
 
 async function checkPermission(userId, permission) {
-  const result = await pool.query(
-    'SELECT role FROM users WHERE id = $1',
-    [userId]
-  );
+  const result = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
 
   if (result.rows.length === 0) {
     return false;
@@ -206,10 +221,7 @@ async function requireSensitiveOperationVerification(req, res, next) {
       });
     }
 
-    const result = await pool.query(
-      'SELECT password FROM users WHERE id = $1',
-      [req.user.id]
-    );
+    const result = await pool.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
 
     if (result.rows.length === 0) {
       return res.status(401).json({
@@ -257,12 +269,7 @@ async function requireSensitiveOperationVerification(req, res, next) {
 }
 
 async function createAuditLog(userId, action, resourceType, resourceId, additionalData = {}) {
-  const {
-    ipAddress,
-    userAgent,
-    requestData,
-    responseStatus
-  } = additionalData;
+  const { ipAddress, userAgent, requestData, responseStatus } = additionalData;
 
   await pool.query(
     `INSERT INTO audit_logs 
@@ -282,15 +289,7 @@ async function createAuditLog(userId, action, resourceType, resourceId, addition
 }
 
 async function getAuditLogs(options = {}) {
-  const {
-    userId,
-    action,
-    resourceType,
-    startDate,
-    endDate,
-    page = 1,
-    limit = 50
-  } = options;
+  const { userId, action, resourceType, startDate, endDate, page = 1, limit = 50 } = options;
 
   const conditions = [];
   const params = [];
@@ -329,10 +328,7 @@ async function getAuditLogs(options = {}) {
       `SELECT * FROM audit_logs ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     ),
-    pool.query(
-      `SELECT COUNT(*) FROM audit_logs ${whereClause}`,
-      params
-    )
+    pool.query(`SELECT COUNT(*) FROM audit_logs ${whereClause}`, params)
   ]);
 
   return {
@@ -454,10 +450,9 @@ async function lockAccount(userId, reason, lockedBy = null, lockedUntil = null) 
     [userId, reason, lockDuration, lockedBy]
   );
 
-  await pool.query(
-    `UPDATE users SET locked = true, locked_at = CURRENT_TIMESTAMP WHERE id = $1`,
-    [userId]
-  );
+  await pool.query(`UPDATE users SET locked = true, locked_at = CURRENT_TIMESTAMP WHERE id = $1`, [
+    userId
+  ]);
 
   await logSecurityEvent('ACCOUNT_LOCKED', {
     userId,
@@ -475,10 +470,7 @@ async function unlockAccount(userId, unlockedBy) {
     [userId, unlockedBy]
   );
 
-  await pool.query(
-    `UPDATE users SET locked = false, locked_at = NULL WHERE id = $1`,
-    [userId]
-  );
+  await pool.query(`UPDATE users SET locked = false, locked_at = NULL WHERE id = $1`, [userId]);
 
   await logSecurityEvent('ACCOUNT_UNLOCKED', {
     userId,
@@ -514,10 +506,9 @@ async function checkSessionTimeout(req, res, next) {
     return next();
   }
 
-  const result = await pool.query(
-    `SELECT last_activity FROM sessions WHERE id = $1`,
-    [req.user.sessionId]
-  );
+  const result = await pool.query(`SELECT last_activity FROM sessions WHERE id = $1`, [
+    req.user.sessionId
+  ]);
 
   if (result.rows.length === 0) {
     return res.status(401).json({
@@ -530,10 +521,7 @@ async function checkSessionTimeout(req, res, next) {
   const now = new Date();
 
   if (now - lastActivity > SESSION_TIMEOUT) {
-    await pool.query(
-      `DELETE FROM sessions WHERE id = $1`,
-      [req.user.sessionId]
-    );
+    await pool.query(`DELETE FROM sessions WHERE id = $1`, [req.user.sessionId]);
 
     await logSecurityEvent('SESSION_TIMEOUT', {
       userId: req.user.id,
@@ -547,10 +535,9 @@ async function checkSessionTimeout(req, res, next) {
     });
   }
 
-  await pool.query(
-    `UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = $1`,
-    [req.user.sessionId]
-  );
+  await pool.query(`UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = $1`, [
+    req.user.sessionId
+  ]);
 
   next();
 }
@@ -561,10 +548,9 @@ async function refreshSession(req, res, next) {
   }
 
   try {
-    await pool.query(
-      `UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = $1`,
-      [req.user.sessionId]
-    );
+    await pool.query(`UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = $1`, [
+      req.user.sessionId
+    ]);
   } catch (error) {
     console.error('Failed to refresh session:', error);
   }
@@ -573,11 +559,7 @@ async function refreshSession(req, res, next) {
 }
 
 function createPermissionChecker(options = {}) {
-  const {
-    requireTwoFactor = false,
-    requireIpWhitelist = false,
-    allowedIps = []
-  } = options;
+  const { requireTwoFactor = false, requireIpWhitelist = false, allowedIps = [] } = options;
 
   return async (req, res, next) => {
     if (!req.user) {
@@ -605,10 +587,9 @@ function createPermissionChecker(options = {}) {
     }
 
     if (requireTwoFactor) {
-      const result = await pool.query(
-        'SELECT two_factor_enabled FROM users WHERE id = $1',
-        [req.user.id]
-      );
+      const result = await pool.query('SELECT two_factor_enabled FROM users WHERE id = $1', [
+        req.user.id
+      ]);
 
       if (result.rows.length > 0 && !result.rows[0].two_factor_enabled) {
         return res.status(403).json({

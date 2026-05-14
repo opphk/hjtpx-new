@@ -1,6 +1,7 @@
-const pool = require('../../../config/database/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+
+const pool = require('../../../config/database/db');
 
 async function connectDatabase() {
   try {
@@ -29,12 +30,12 @@ async function createTestUser(overrides = {}) {
   };
   const user = { ...defaultUser, ...overrides };
   const hashedPassword = await bcrypt.hash(user.password, 10);
-  
+
   const result = await pool.query(
     'INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name, created_at',
     [user.email, user.name, hashedPassword]
   );
-  
+
   return {
     ...result.rows[0],
     plainPassword: user.password
@@ -51,19 +52,15 @@ async function cleanTestData() {
 }
 
 async function generateTestToken(userId, email) {
-  return jwt.sign(
-    { userId, email },
-    process.env.JWT_SECRET || 'test-secret-key',
-    { expiresIn: '1h' }
-  );
+  return jwt.sign({ userId, email }, process.env.JWT_SECRET || 'test-secret-key', {
+    expiresIn: '1h'
+  });
 }
 
 async function generateExpiredToken(userId, email) {
-  return jwt.sign(
-    { userId, email },
-    process.env.JWT_SECRET || 'test-secret-key',
-    { expiresIn: '-1h' }
-  );
+  return jwt.sign({ userId, email }, process.env.JWT_SECRET || 'test-secret-key', {
+    expiresIn: '-1h'
+  });
 }
 
 module.exports = {
