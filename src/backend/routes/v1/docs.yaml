@@ -289,11 +289,100 @@ src/
 }
 ```
 
+#### POST /api/v1/password/forgot
+
+请求密码重置邮件。
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| email | string | 是 | 用户邮箱地址 |
+
+**请求示例**：
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**响应示例**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "If email exists, reset link will be sent"
+  },
+  "message": "Password reset email sent if account exists",
+  "timestamp": "2026-05-14T10:30:00.000Z"
+}
+```
+
+#### POST /api/v1/password/reset
+
+重置用户密码。
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| token | string | 是 | 重置令牌（从邮件链接获取） |
+| newPassword | string | 是 | 新密码（至少8个字符，包含大小写字母、数字和特殊字符） |
+
+**请求示例**：
+
+```json
+{
+  "token": "abc123def456...",
+  "newPassword": "NewSecurePass123!"
+}
+```
+
+**响应示例**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Password successfully reset"
+  },
+  "message": "Password successfully reset",
+  "timestamp": "2026-05-14T10:30:00.000Z"
+}
+```
+
+**错误响应**：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Invalid or expired reset token"
+  },
+  "timestamp": "2026-05-14T10:30:00.000Z"
+}
+```
+
 ### 2.4 用户管理接口
+
+**权限说明**：
+
+| 接口 | 所需权限 | 说明 |
+|------|----------|------|
+| GET /api/v1/users | admin | 仅管理员可访问 |
+| GET /api/v1/users/:id | admin, user（仅本人） | 管理员可访问任意用户，普通用户仅可访问本人 |
+| POST /api/v1/users | admin | 仅管理员可创建用户 |
+| PUT /api/v1/users/:id | admin, user（仅本人） | 管理员可更新任意用户，普通用户仅可更新本人（非管理员字段） |
+| DELETE /api/v1/users/:id | admin | 仅管理员可删除用户 |
 
 #### GET /api/v1/users
 
-获取所有用户列表。
+获取所有用户列表（需要管理员权限）。
+
+**权限**：admin
 
 **响应示例**：
 
@@ -660,6 +749,21 @@ router.get('/endpoint/:id', validator('idSchema', 'params'), handler);
 | name | string | 2-100 个字符 | "名称必须至少2个字符" / "名称不能超过100个字符" |
 | password | string | 8-128 个字符，包含大小写字母和数字 | "密码必须至少8个字符" / "密码必须包含至少一个大写字母、一个小区字母和一个数字" |
 
+### 4.4 密码重置规则
+
+**Schema 名称**: `forgotPasswordSchema`
+
+| 字段 | 类型 | 必填 | 约束 | 错误信息 |
+|------|------|------|------|----------|
+| email | string | 是 | 有效的邮箱格式 | "请提供有效的邮箱地址" |
+
+**Schema 名称**: `resetPasswordSchema`
+
+| 字段 | 类型 | 必填 | 约束 | 错误信息 |
+|------|------|------|------|----------|
+| token | string | 是 | 32-128 个字符 | "重置令牌无效" |
+| newPassword | string | 是 | 8-128 个字符，包含大小写字母、数字和特殊字符 | "密码必须至少8个字符" / "密码必须包含至少一个大写字母、一个小区字母、一个数字和一个特殊字符" |
+
 ## 5. 错误处理
 
 ### 5.1 HTTP 状态码
@@ -695,6 +799,8 @@ router.get('/endpoint/:id', validator('idSchema', 'params'), handler);
 | CREATE_USER_ERROR | 创建用户错误 | 400 |
 | UPDATE_USER_ERROR | 更新用户错误 | 400 |
 | DELETE_USER_ERROR | 删除用户错误 | 500 |
+| FORGOT_PASSWORD_ERROR | 密码重置请求错误 | 500 |
+| RESET_PASSWORD_ERROR | 密码重置错误 | 400 |
 
 ### 5.3 错误响应格式
 
@@ -742,6 +848,101 @@ router.get('/endpoint/:id', validator('idSchema', 'params'), handler);
 - 所有输入数据使用 Joi 进行验证
 - 防止 SQL 注入
 - 防止 XSS 攻击
+
+### 6.5 基于角色的访问控制（RBAC）
+
+系统实现了基于角色的访问控制（Role-Based Access Control）。
+
+#### 角色定义
+
+| 角色 | 层级 | 说明 |
+|------|------|------|
+| admin | 3 | 管理员，拥有所有权限 |
+| user | 2 | 普通用户，拥有基本权限 |
+| guest | 1 | 访客，仅有最低权限 |
+
+#### 角色层级说明
+
+角色层级决定了权限的继承关系：
+- admin 可以访问所有资源
+- user 可以访问 user 和 guest 级别的资源
+- guest 只能访问 guest 级别的资源
+
+#### 使用方法
+
+```javascript
+const { checkRole, ROLES } = require('./middleware/rbac');
+
+// 检查特定角色
+router.get('/admin-only', auth, checkRole(ROLES.ADMIN), handler);
+
+// 检查多个角色（满足任一即可）
+router.get('/users', auth, checkRole(ROLES.ADMIN, ROLES.USER), handler);
+
+// 检查最小角色级别
+router.get('/content', auth, checkMinimumRole(ROLES.USER), handler);
+
+// 检查特定权限
+router.get('/data', auth, checkPermission('read:data'), handler);
+```
+
+#### 辅助函数
+
+| 函数 | 说明 |
+|------|------|
+| requireAdmin | 仅允许管理员访问 |
+| requireUser | 仅允许用户和更高角色访问 |
+| requireGuest | 仅允许访客和更高角色访问 |
+| isAdmin | 检查当前用户是否为管理员 |
+| isUser | 检查当前用户是否为普通用户或更高角色 |
+| isGuest | 检查当前用户是否为访客或更高角色 |
+
+### 6.6 会话管理
+
+系统实现了增强的会话管理功能，支持多设备登录控制和登录历史记录。
+
+#### 主要功能
+
+- **多设备登录控制**：限制用户同时活跃的会话数量（默认最多5个会话）
+- **登录历史记录**：记录所有登录尝试，包括成功和失败的尝试
+- **会话过期处理**：自动清理过期会话
+- **设备信息跟踪**：记录登录设备信息（IP、浏览器、操作系统等）
+
+#### 会话表结构
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 会话唯一标识符 |
+| user_id | UUID | 关联的用户ID |
+| token | VARCHAR(500) | 会话令牌 |
+| expires_at | TIMESTAMP | 过期时间 |
+| device_info | JSONB | 设备信息 |
+| ip_address | INET | IP地址 |
+| user_agent | TEXT | 用户代理字符串 |
+| is_revoked | BOOLEAN | 是否已撤销 |
+| last_activity | TIMESTAMP | 最后活动时间 |
+| is_current | BOOLEAN | 是否为当前会话 |
+| created_at | TIMESTAMP | 创建时间 |
+
+#### 登录历史表结构
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 记录唯一标识符 |
+| user_id | UUID | 关联的用户ID |
+| action | VARCHAR(50) | 操作类型（login/logout/failed） |
+| ip_address | INET | IP地址 |
+| user_agent | TEXT | 用户代理字符串 |
+| device_info | JSONB | 设备信息 |
+| success | BOOLEAN | 是否成功 |
+| created_at | TIMESTAMP | 创建时间 |
+
+#### 账户锁定功能
+
+系统实现了账户锁定功能以防止暴力破解：
+- 连续5次登录失败后账户将被锁定15分钟
+- 锁定期间无法尝试登录
+- 成功登录后失败计数将被重置
 
 ## 7. 环境变量
 
