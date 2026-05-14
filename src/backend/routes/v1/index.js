@@ -4,10 +4,14 @@ const router = express.Router();
 const healthRoutes = require('./health');
 const usersRoutes = require('./users');
 const authRoutes = require('./auth');
+const passwordRoutes = require('./password');
+const performanceRoutes = require('./performance');
 
 router.use('/health', healthRoutes);
 router.use('/users', usersRoutes);
 router.use('/auth', authRoutes);
+router.use('/password', passwordRoutes);
+router.use('/performance', performanceRoutes);
 
 router.get('/', (req, res) => {
   res.json({
@@ -19,7 +23,9 @@ router.get('/', (req, res) => {
       endpoints: {
         health: '/api/v1/health',
         users: '/api/v1/users',
-        auth: '/api/v1/auth'
+        auth: '/api/v1/auth',
+        password: '/api/v1/password',
+        performance: '/api/v1/performance'
       },
       timestamp: new Date().toISOString()
     }
