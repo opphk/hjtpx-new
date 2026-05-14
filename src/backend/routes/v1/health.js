@@ -4,6 +4,7 @@ const router = express.Router();
 
 let db = null;
 let redisClient = null;
+let cacheService = null;
 
 try {
   db = require('../../../../config/database/db');
@@ -15,6 +16,12 @@ try {
   redisClient = require('../../../../config/redis/client');
 } catch (error) {
   console.warn('Redis connection not available');
+}
+
+try {
+  cacheService = require('../../../services/cacheService');
+} catch (error) {
+  console.warn('Cache service not available');
 }
 
 router.get('/', async (req, res) => {
@@ -104,6 +111,22 @@ router.get('/detailed', async (req, res) => {
       healthStatus.status = 'degraded';
     }
 
+    if (cacheService) {
+      const cacheHealth = await cacheService.isHealthy();
+      const cacheStats = cacheService.getStats();
+      
+      healthStatus.checks.cache = {
+        status: cacheHealth ? 'healthy' : 'degraded',
+        message: cacheHealth ? 'Cache service is healthy' : 'Cache service is degraded',
+        stats: cacheStats
+      };
+    } else {
+      healthStatus.checks.cache = {
+        status: 'unavailable',
+        message: 'Cache service not configured'
+      };
+    }
+
     healthStatus.checks.memory = {
       status: 'healthy',
       message: 'Memory usage is normal',
@@ -138,6 +161,50 @@ router.get('/detailed', async (req, res) => {
     res.status(503).json({
       success: false,
       data: healthStatus
+    });
+  }
+});
+
+router.get('/stats', async (req, res) => {
+  try {
+    if (!cacheService) {
+      return res.status(503).json({
+        success: false,
+        error: 'Cache service not available'
+      });
+    }
+
+    const stats = cacheService.getStats();
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve cache stats'
+    });
+  }
+});
+
+router.post('/stats/reset', async (req, res) => {
+  try {
+    if (!cacheService) {
+      return res.status(503).json({
+        success: false,
+        error: 'Cache service not available'
+      });
+    }
+
+    cacheService.resetStats();
+    res.json({
+      success: true,
+      message: 'Cache statistics reset successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset cache stats'
     });
   }
 });

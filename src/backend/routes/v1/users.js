@@ -15,6 +15,18 @@ router.get('/', auth, checkRole(ROLES.ADMIN), async (req, res) => {
   }
 });
 
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await userService.getUserById(req.user.id);
+    if (!user) {
+      return res.notFound('User not found');
+    }
+    res.success(user, 'User retrieved successfully');
+  } catch (error) {
+    res.error(error.message, 500, 'FETCH_USER_ERROR');
+  }
+});
+
 router.get('/:id', auth, checkRole(ROLES.ADMIN, ROLES.USER), async (req, res) => {
   try {
     if (req.user.role !== ROLES.ADMIN && req.user.id !== req.params.id) {
@@ -51,6 +63,22 @@ router.post(
     }
   }
 );
+
+router.put('/me', auth, validator('updateUserSchema', 'body'), async (req, res) => {
+  try {
+    const updateData = req.body;
+    delete updateData.role;
+    delete updateData.id;
+
+    const user = await userService.updateUser(req.user.id, updateData);
+    if (!user) {
+      return res.notFound('User not found');
+    }
+    res.success(user, 'User updated successfully');
+  } catch (error) {
+    res.error(error.message, 500, 'UPDATE_USER_ERROR');
+  }
+});
 
 router.put(
   '/:id',

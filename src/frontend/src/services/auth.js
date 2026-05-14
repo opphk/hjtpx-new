@@ -1,5 +1,27 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+export const register = async userData => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, message: '注册成功' };
+    }
+    return { success: false, message: data.message || '注册失败' };
+  } catch (error) {
+    console.error('Register error:', error);
+    return { success: false, message: '网络错误，请稍后重试' };
+  }
+};
+
 export const authService = {
   async login(credentials) {
     try {
@@ -51,7 +73,7 @@ export const authService = {
     }
   },
 
-  async logout() {
+  logout() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     return { success: true };

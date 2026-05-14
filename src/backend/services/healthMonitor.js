@@ -3,6 +3,21 @@ const os = require('os');
 const { logInfo, logDebug } = require('../utils/productionLogger');
 const { alertManager } = require('./alertService');
 
+let cacheService = null;
+let redisClient = null;
+
+try {
+  cacheService = require('./cacheService');
+} catch (error) {
+  console.warn('Cache service not available');
+}
+
+try {
+  redisClient = require('../../config/redis/client');
+} catch (error) {
+  console.warn('Redis client not available');
+}
+
 class HealthMonitor {
   constructor() {
     this.checks = new Map();
@@ -261,6 +276,67 @@ healthMonitor.registerCheck('cpu', async () => {
 
   return { healthy: true, message: 'CPU usage is normal' };
 });
+
+if (cacheService) {
+  healthMonitor.registerCheck('cache', async () => {
+    const isHealthy = await cacheService.isHealthy();
+    const stats = cacheService.getStats();
+
+    if (!isHealthy) {
+      return {
+        healthy: false,
+        message: 'Cache service is unhealthy',
+        details: { isRedisConnected: false }
+      };
+    }
+
+    return {
+      healthy: true,
+      message: 'Cache service is healthy',
+      details: {
+        isRedisConnected: stats.isRedisConnected,
+        memoryCacheSize: stats.memoryCacheSize,
+        hitRate: stats.overall?.hitRate || '0%'
+      }
+    };
+  });
+}
+
+if (redisClient) {
+  healthMonitor.registerCheck('redis', async () => {
+    try {
+      if (!redisClient.isOpen) {
+        return {
+          healthy: false,
+          message: 'Redis client is not connected',
+          details: { isOpen: false }
+        };
+      }
+
+      const pong = await redisClient.ping();
+      
+      if (pong === 'PONG') {
+        return {
+          healthy: true,
+          message: 'Redis client is healthy',
+          details: { isOpen: true, ping: 'PONG' }
+        };
+      } else {
+        return {
+          healthy: false,
+          message: 'Redis ping failed',
+          details: { isOpen: true, ping: pong }
+        };
+      }
+    } catch (error) {
+      return {
+        healthy: false,
+        message: `Redis error: ${error.message}`,
+        details: { error: error.message }
+      };
+    }
+  });
+}
 
 module.exports = {
   HealthMonitor,

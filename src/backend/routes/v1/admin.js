@@ -77,7 +77,7 @@ router.post('/users', async (req, res) => {
   try {
     const { username, email, password, role = 'user', status = 'active' } = req.body;
 
-    const bcrypt = require('bcrypt');
+    const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await req.db.query(
@@ -112,7 +112,7 @@ router.put('/users/:id', async (req, res) => {
     }
 
     if (password) {
-      const bcrypt = require('bcrypt');
+      const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash(password, 10);
       updates.push(`password = $${paramIndex++}`);
       params.push(hashedPassword);

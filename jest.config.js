@@ -1,14 +1,17 @@
 module.exports = {
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.test.js'],
   collectCoverageFrom: [
     'src/**/*.js',
     'src/**/*.jsx',
     '!src/**/*.test.js',
-    '!src/**/__tests__/**',
+    'src/**/__tests__/**',
     '!src/**/node_modules/**'
   ],
+  transform: {
+    '^.+\\.js$': 'babel-jest'
+  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -34,5 +37,6 @@ module.exports = {
   },
   testPathIgnorePatterns: ['/node_modules/', '/frontend/node_modules/'],
   verbose: true,
-  modulePathIgnorePatterns: ['<rootDir>/src/config/database/db.js']
+  modulePathIgnorePatterns: ['<rootDir>/src/config/database/db.js'],
+  testTimeout: 10000
 };

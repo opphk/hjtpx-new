@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const pool = require('../../../config/database/db');
 const sessionService = require('../services/sessionService');
+const cacheService = require('../services/cacheService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hjtpx-secret-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -79,7 +80,23 @@ async function authenticateWithSession(req, res, next) {
       });
     }
 
+    const cachedSession = await cacheService.getSession(token);
+    if (cachedSession) {
+      req.user = {
+        id: cachedSession.userId,
+        email: cachedSession.email,
+        name: cachedSession.name,
+        role: cachedSession.role,
+        sessionId: cachedSession.id
+      };
+      req.session = cachedSession;
+      return next();
+    }
+
     const session = await sessionService.validateSession(token);
+    
+    await cacheService.setSession(token, session);
+
     req.user = {
       id: session.userId,
       email: session.email,

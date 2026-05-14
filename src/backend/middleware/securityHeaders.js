@@ -2,49 +2,68 @@ const helmet = require('helmet');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const securityHeaders = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],
-      styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
-      fontSrc: ["'self'", 'fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'"],
-      mediaSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: isProduction ? [] : null
-    }
-  },
-  crossOriginEmbedderPolicy: isProduction,
-  crossOriginOpenerPolicy: isProduction,
-  crossOriginResourcePolicy: { policy: 'same-origin' },
-  dnsPrefetchControl: { allow: false },
-  frameguard: { action: isProduction ? 'deny' : 'allowfrom' },
-  hidePoweredBy: true,
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  },
-  ieNoOpen: true,
-  noSniff: true,
-  originAgentCluster: true,
-  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  xssFilter: true
+const crypto = require('crypto');
+
+const nonceMiddleware = (req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString('base64');
+  next();
+};
+
+const getCSPWithNonce = (nonce) => ({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'", 'cdn.jsdelivr.net'],
+    styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+    fontSrc: ["'self'", 'fonts.gstatic.com'],
+    imgSrc: ["'self'", 'data:', 'https:'],
+    connectSrc: ["'self'", 'https://api.hjtpx.com'],
+    mediaSrc: ["'self'"],
+    objectSrc: ["'none'"],
+    frameSrc: ["'none'"],
+    frameAncestors: ["'none'"],
+    formAction: ["'self'"],
+    baseUri: ["'self'"],
+    upgradeInsecureRequests: isProduction ? [] : null,
+    reportUri: '/api/v1/security/csp-report'
+  }
 });
 
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
-  : process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001'
-    ];
+const securityHeaders = (req, res, next) => {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  res.locals.cspNonce = nonce;
+
+  helmet.contentSecurityPolicy(getCSPWithNonce(nonce))(req, res, () => {
+    helmet.crossOriginEmbedderPolicy(isProduction ? { policy: 'require-corp' } : false)(req, res, () => {
+      helmet.crossOriginOpenerPolicy(isProduction ? { policy: 'same-origin' } : false)(req, res, () => {
+        helmet.crossOriginResourcePolicy({ policy: 'same-origin' })(req, res, () => {
+          helmet.dnsPrefetchControl({ allow: false })(req, res, () => {
+            helmet.frameguard({ action: isProduction ? 'deny' : 'sameorigin' })(req, res, () => {
+              helmet.hidePoweredBy()(req, res, () => {
+                helmet.hsts({
+                  maxAge: 31536000,
+                  includeSubDomains: true,
+                  preload: true
+                })(req, res, () => {
+                  helmet.ieNoOpen()(req, res, () => {
+                    helmet.noSniff()(req, res, () => {
+                      helmet.originAgentCluster()(req, res, () => {
+                        helmet.permittedCrossDomainPolicies({ permittedPolicies: 'none' })(req, res, () => {
+                          helmet.referrerPolicy({ policy: 'strict-origin-when-cross-origin' })(req, res, () => {
+                            helmet.xssFilter()(req, res, next);
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+};
 
 const additionalSecurityHeaders = (req, res, next) => {
   res.set({
@@ -72,5 +91,6 @@ const additionalSecurityHeaders = (req, res, next) => {
 
 module.exports = {
   securityHeaders,
-  additionalSecurityHeaders
+  additionalSecurityHeaders,
+  nonceMiddleware
 };

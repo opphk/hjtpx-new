@@ -1,5 +1,26 @@
 const redisClient = require('../../../config/redis/client');
 
+const CACHE_KEYS = {
+  SESSION: 'session:',
+  USER: 'user:',
+  API: 'api:',
+  PERMISSIONS: 'permissions:',
+  TOKEN_BLACKLIST: 'blacklist:',
+  RATE_LIMIT: 'ratelimit:',
+  ANALYTICS: 'analytics:'
+};
+
+const CACHE_TTL = {
+  SESSION: 604800,
+  USER: 1800,
+  API_PUBLIC: 300,
+  API_PRIVATE: 60,
+  PERMISSIONS: 3600,
+  TOKEN_BLACKLIST: 604800,
+  RATE_LIMIT: 60,
+  ANALYTICS: 300
+};
+
 class CacheService {
   constructor() {
     this.memoryCache = new Map();
@@ -9,7 +30,10 @@ class CacheService {
       misses: 0,
       sets: 0,
       deletes: 0,
-      errors: 0
+      errors: 0,
+      sessions: { hits: 0, misses: 0 },
+      api: { hits: 0, misses: 0 },
+      user: { hits: 0, misses: 0 }
     };
     this.defaultTTL = 300;
     this.memoryCacheTTL = 60000;
@@ -34,6 +58,99 @@ class CacheService {
       console.error('Failed to connect to Redis:', error);
       this.isRedisConnected = false;
     }
+  }
+
+  generateSessionKey(sessionToken) {
+    return `${CACHE_KEYS.SESSION}${sessionToken}`;
+  }
+
+  generateUserKey(userId) {
+    return `${CACHE_KEYS.USER}${userId}`;
+  }
+
+  generateApiKey(endpoint, userId = null, params = {}) {
+    const base = `${CACHE_KEYS.API}${endpoint}`;
+    if (userId) {
+      return `${base}:user:${userId}`;
+    }
+    const paramHash = Object.keys(params).sort()
+      .map(k => `${k}=${params[k]}`)
+      .join('&');
+    return paramHash ? `${base}:${paramHash}` : base;
+  }
+
+  async getSession(sessionToken) {
+    const key = this.generateSessionKey(sessionToken);
+    const cached = await this.get(key);
+    if (cached) {
+      this.stats.sessions.hits++;
+      return cached;
+    }
+    this.stats.sessions.misses++;
+    return null;
+  }
+
+  async setSession(sessionToken, sessionData, ttl = CACHE_TTL.SESSION) {
+    const key = this.generateSessionKey(sessionToken);
+    return await this.set(key, sessionData, ttl);
+  }
+
+  async invalidateSession(sessionToken) {
+    const key = this.generateSessionKey(sessionToken);
+    return await this.del(key);
+  }
+
+  async invalidateUserSessions(userId) {
+    return await this.invalidatePattern(`${CACHE_KEYS.SESSION}*:${userId}*`);
+  }
+
+  async getCachedUser(userId) {
+    const key = this.generateUserKey(userId);
+    const cached = await this.get(key);
+    if (cached) {
+      this.stats.user.hits++;
+      return cached;
+    }
+    this.stats.user.misses++;
+    return null;
+  }
+
+  async setCachedUser(userId, userData, ttl = CACHE_TTL.USER) {
+    const key = this.generateUserKey(userId);
+    return await this.set(key, userData, ttl);
+  }
+
+  async invalidateUserCache(userId) {
+    const key = this.generateUserKey(userId);
+    return await this.del(key);
+  }
+
+  async getCachedApiResponse(key) {
+    const fullKey = `${CACHE_KEYS.API}${key}`;
+    const cached = await this.get(fullKey);
+    if (cached) {
+      this.stats.api.hits++;
+      return cached;
+    }
+    this.stats.api.misses++;
+    return null;
+  }
+
+  async setCachedApiResponse(key, responseData, isPublic = true, ttl = CACHE_TTL.API_PUBLIC) {
+    const fullKey = `${CACHE_KEYS.API}${key}`;
+    return await this.set(fullKey, responseData, isPublic ? CACHE_TTL.API_PUBLIC : CACHE_TTL.API_PRIVATE);
+  }
+
+  async invalidateApiCache(pattern = '*') {
+    return await this.invalidatePattern(`${CACHE_KEYS.API}${pattern}`);
+  }
+
+  async invalidateAllUserCache(userId) {
+    await Promise.all([
+      this.invalidateUserCache(userId),
+      this.invalidatePattern(`${CACHE_KEYS.API}*:user:${userId}*`),
+      this.invalidatePattern(`${CACHE_KEYS.PERMISSIONS}${userId}`)
+    ]);
   }
 
   async get(key) {
@@ -221,13 +338,52 @@ class CacheService {
     }
   }
 
+  async isHealthy() {
+    try {
+      if (!this.isRedisConnected) {
+        return false;
+      }
+      const pong = await redisClient.ping();
+      return pong === 'PONG';
+    } catch (error) {
+      return false;
+    }
+  }
+
   getStats() {
     const total = this.stats.hits + this.stats.misses;
+    const sessionTotal = this.stats.sessions.hits + this.stats.sessions.misses;
+    const apiTotal = this.stats.api.hits + this.stats.api.misses;
+    const userTotal = this.stats.user.hits + this.stats.user.misses;
+
     return {
-      ...this.stats,
-      hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) + '%' : '0%',
+      overall: {
+        hits: this.stats.hits,
+        misses: this.stats.misses,
+        hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) + '%' : '0%',
+        sets: this.stats.sets,
+        deletes: this.stats.deletes,
+        errors: this.stats.errors
+      },
+      session: {
+        hits: this.stats.sessions.hits,
+        misses: this.stats.sessions.misses,
+        hitRate: sessionTotal > 0 ? ((this.stats.sessions.hits / sessionTotal) * 100).toFixed(2) + '%' : '0%'
+      },
+      api: {
+        hits: this.stats.api.hits,
+        misses: this.stats.api.misses,
+        hitRate: apiTotal > 0 ? ((this.stats.api.hits / apiTotal) * 100).toFixed(2) + '%' : '0%'
+      },
+      user: {
+        hits: this.stats.user.hits,
+        misses: this.stats.user.misses,
+        hitRate: userTotal > 0 ? ((this.stats.user.hits / userTotal) * 100).toFixed(2) + '%' : '0%'
+      },
       memoryCacheSize: this.memoryCache.size,
-      isRedisConnected: this.isRedisConnected
+      isRedisConnected: this.isRedisConnected,
+      cacheKeys: CACHE_KEYS,
+      cacheTTL: CACHE_TTL
     };
   }
 
@@ -237,7 +393,10 @@ class CacheService {
       misses: 0,
       sets: 0,
       deletes: 0,
-      errors: 0
+      errors: 0,
+      sessions: { hits: 0, misses: 0 },
+      api: { hits: 0, misses: 0 },
+      user: { hits: 0, misses: 0 }
     };
   }
 }
@@ -245,3 +404,5 @@ class CacheService {
 const cacheService = new CacheService();
 
 module.exports = cacheService;
+module.exports.CACHE_KEYS = CACHE_KEYS;
+module.exports.CACHE_TTL = CACHE_TTL;
