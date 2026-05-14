@@ -62,6 +62,15 @@ const performanceMonitor = {
     if (res.statusCode >= 400) {
       endpoint.errors++;
     }
+
+    if (req.analyticsService) {
+      req.analyticsService.recordApiPerformance(
+        req.route?.path || req.path,
+        req.method,
+        Math.round(duration),
+        res.statusCode
+      ).catch(err => console.error('Failed to record API performance:', err));
+    }
   },
 
   recordError(error, req) {
@@ -162,6 +171,8 @@ const performanceMonitor = {
 function performanceMiddleware(req, res, next) {
   const startTime = performanceMonitor.startTimer();
 
+  req.analyticsService = require('../services/analyticsService');
+
   res.on('finish', () => {
     const duration = performanceMonitor.endTimer(startTime);
     performanceMonitor.recordRequest(req, res, duration);
@@ -178,7 +189,160 @@ function performanceMiddleware(req, res, next) {
   next();
 }
 
+function createDatabaseMonitor() {
+  const dbMetrics = {
+    queries: [],
+    slowQueries: [],
+    totalQueries: 0,
+    totalDuration: 0,
+    errors: 0
+  };
+
+  const slowQueryThreshold = parseInt(process.env.DB_SLOW_QUERY_THRESHOLD) || 1000;
+  const maxHistory = 100;
+
+  return {
+    recordQuery(query, duration, error = null) {
+      dbMetrics.totalQueries++;
+      dbMetrics.totalDuration += duration;
+
+      const metric = {
+        query: query.substring(0, 200),
+        duration,
+        timestamp: new Date().toISOString(),
+        error: error ? error.message : null
+      };
+
+      dbMetrics.queries.push(metric);
+      if (dbMetrics.queries.length > maxHistory) {
+        dbMetrics.queries.shift();
+      }
+
+      if (duration > slowQueryThreshold) {
+        dbMetrics.slowQueries.push(metric);
+        if (dbMetrics.slowQueries.length > 50) {
+          dbMetrics.slowQueries.shift();
+        }
+      }
+
+      if (error) {
+        dbMetrics.errors++;
+      }
+    },
+
+    getMetrics() {
+      return {
+        totalQueries: dbMetrics.totalQueries,
+        avgDuration: dbMetrics.totalQueries > 0 ? dbMetrics.totalDuration / dbMetrics.totalQueries : 0,
+        slowQueries: dbMetrics.slowQueries.length,
+        errors: dbMetrics.errors,
+        recentQueries: dbMetrics.queries.slice(-20)
+      };
+    },
+
+    reset() {
+      dbMetrics.queries = [];
+      dbMetrics.slowQueries = [];
+      dbMetrics.totalQueries = 0;
+      dbMetrics.totalDuration = 0;
+      dbMetrics.errors = 0;
+    }
+  };
+}
+
+function createCacheMonitor(cacheService) {
+  return {
+    getStats() {
+      if (cacheService && typeof cacheService.getStats === 'function') {
+        return cacheService.getStats();
+      }
+      return null;
+    },
+
+    async getDetailedStats() {
+      const basicStats = this.getStats();
+
+      if (basicStats) {
+        const now = Date.now();
+        const hourAgo = now - 3600000;
+
+        return {
+          ...basicStats,
+          period: { from: new Date(hourAgo), to: new Date(now) }
+        };
+      }
+
+      return null;
+    }
+  };
+}
+
+function generatePerformanceReport() {
+  const metrics = performanceMonitor.getMetrics();
+  const dbMonitor = createDatabaseMonitor();
+
+  return {
+    generatedAt: new Date().toISOString(),
+    performance: metrics,
+    database: {
+      summary: dbMonitor.getMetrics()
+    },
+    cache: {
+      hitRate: 0,
+      totalHits: 0,
+      totalMisses: 0
+    },
+    recommendations: generateRecommendations(metrics)
+  };
+}
+
+function generateRecommendations(metrics) {
+  const recommendations = [];
+
+  if (metrics.summary.avgResponseTime > 2000) {
+    recommendations.push({
+      priority: 'high',
+      category: 'performance',
+      issue: 'High average response time',
+      suggestion: 'Consider optimizing slow endpoints or adding caching'
+    });
+  }
+
+  if (metrics.summary.totalSlowRequests > 100) {
+    recommendations.push({
+      priority: 'medium',
+      category: 'performance',
+      issue: 'Many slow requests detected',
+      suggestion: 'Review and optimize the top slow endpoints'
+    });
+  }
+
+  if (metrics.topErrorEndpoints.length > 0) {
+    recommendations.push({
+      priority: 'high',
+      category: 'reliability',
+      issue: 'Endpoints with errors',
+      suggestion: 'Investigate and fix error-prone endpoints'
+    });
+  }
+
+  return recommendations;
+}
+
+const databaseMonitor = createDatabaseMonitor();
+let cacheMonitorInstance = null;
+
+function initCacheMonitor(cacheService) {
+  cacheMonitorInstance = createCacheMonitor(cacheService);
+}
+
 module.exports = {
   performanceMonitor,
-  performanceMiddleware
+  performanceMiddleware,
+  databaseMonitor,
+  cacheMonitor: () => cacheMonitorInstance,
+  initCacheMonitor,
+  createDatabaseMonitor,
+  createCacheMonitor,
+  generatePerformanceReport
 };
