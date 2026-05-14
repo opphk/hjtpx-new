@@ -58,33 +58,17 @@ class EmailService {
     const templates = {
       welcome: {
         subject: 'Welcome to HJTPX',
-        html: `
-          <h1>Welcome to HJTPX!</h1>
-          <p>Thank you for registering, {{username}}.</p>
-          <p>Get started by exploring our features.</p>
-          <a href="{{appUrl}}">Open App</a>
-        `,
+        html: '<h1>Welcome to HJTPX!</h1><p>Thank you for registering, {{username}}.</p><p>Get started by exploring our features.</p><a href="{{appUrl}}">Open App</a>',
         text: 'Welcome to HJTPX! Thank you for registering, {{username}}.'
       },
       notification: {
         subject: 'New Notification: {{title}}',
-        html: `
-          <h2>{{title}}</h2>
-          <p>{{message}}</p>
-          <small>Sent at {{timestamp}}</small>
-        `,
+        html: '<h2>{{title}}</h2><p>{{message}}</p><small>Sent at {{timestamp}}</small>',
         text: '{{title}}\n\n{{message}}\n\nSent at {{timestamp}}'
       },
       resetPassword: {
         subject: 'Reset Your Password',
-        html: `
-          <h1>Password Reset Request</h1>
-          <p>Hi {{username}},</p>
-          <p>You requested a password reset. Click the link below:</p>
-          <a href="{{resetUrl}}">Reset Password</a>
-          <p>This link expires in {{expiresIn}}.</p>
-          <p>If you didn't request this, please ignore this email.</p>
-        `,
+        html: '<h1>Password Reset Request</h1><p>Hi {{username}},</p><p>You requested a password reset. Click the link below:</p><a href="{{resetUrl}}">Reset Password</a><p>This link expires in {{expiresIn}}.</p><p>If you didn\'t request this, please ignore this email.</p>',
         text: 'Password Reset Request\n\nHi {{username}},\n\nYou requested a password reset. Visit: {{resetUrl}}\n\nThis link expires in {{expiresIn}}.'
       }
     };

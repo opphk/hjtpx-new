@@ -1,7 +1,7 @@
 const express = require('express');
+const router = express.Router();
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../config/swagger');
-const router = express.Router();
 
 router.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: `

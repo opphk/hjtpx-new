@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const notificationService = require('../services/notificationService');
-const emailService = require('../services/emailService');
-const smsService = require('../services/smsService');
 const { authenticateToken } = require('../middleware/auth');
 
 /**

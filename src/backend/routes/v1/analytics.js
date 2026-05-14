@@ -14,15 +14,6 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
  *     responses:
  *       200:
  *         description: Dashboard summary data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/AnalyticsData'
  */
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {

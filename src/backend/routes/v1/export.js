@@ -35,11 +35,6 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
  *     responses:
  *       200:
  *         description: Export file
- *         content:
- *           application/octet-stream:
- *             schema:
- *               type: string
- *               format: binary
  */
 router.post('/', authenticateToken, async (req, res) => {
   try {
