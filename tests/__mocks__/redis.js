@@ -30,6 +30,10 @@ const mockZIncrBy = jest.fn().mockResolvedValue(1);
 const mockZRemRangeByScore = jest.fn().mockResolvedValue(0);
 const mockFlushDb = jest.fn().mockResolvedValue('OK');
 const mockSetEx = jest.fn().mockResolvedValue('OK');
+const mockSendCommand = jest.fn().mockResolvedValue(null);
+
+const mockIsOpen = jest.fn().mockReturnValue(true);
+const mockOn = jest.fn();
 
 const client = {
   get: mockGet,
@@ -57,16 +61,30 @@ const client = {
   zRemRangeByScore: mockZRemRangeByScore,
   flushDb: mockFlushDb,
   setEx: mockSetEx,
-  isOpen: true,
-  on: jest.fn()
+  sendCommand: mockSendCommand,
+  on: mockOn
 };
 
 Object.defineProperty(client, 'isOpen', {
-  get: function() { return true; }
+  get: function() { return true; },
+  configurable: true,
+  enumerable: true
+});
+
+const createClient = jest.fn().mockImplementation(() => {
+  const newClient = { ...client };
+  Object.defineProperty(newClient, 'isOpen', {
+    get: function() { return true; },
+    configurable: true,
+    enumerable: true
+  });
+  return newClient;
 });
 
 module.exports = {
   client,
+  createClient,
+  default: null,
   ping: mockPing,
   get: mockGet,
   set: mockSet,
@@ -91,5 +109,6 @@ module.exports = {
   zIncrBy: mockZIncrBy,
   zRemRangeByScore: mockZRemRangeByScore,
   flushDb: mockFlushDb,
-  setEx: mockSetEx
+  setEx: mockSetEx,
+  sendCommand: mockSendCommand
 };

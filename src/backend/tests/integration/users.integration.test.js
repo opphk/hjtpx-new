@@ -2,9 +2,7 @@ const request = require('supertest');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 
-const pool = require('../../../config/database/db');
 const usersRoutes = require('../../routes/v1/users');
-const { userFactory } = require('../factories');
 const {
   generateToken,
   testPassword,
@@ -25,12 +23,26 @@ describe('Users API Integration Tests', () => {
   let cleanupUsers = [];
 
   beforeAll(async () => {
-    regularUser = await userFactory.createUser({
-      password: testPassword
-    });
-    adminUser = await userFactory.createAdmin({
-      password: testPassword
-    });
+    const hashedPassword = await bcrypt.hash(testPassword, 10);
+    
+    regularUser = {
+      id: 1,
+      email: `regular_${Date.now()}@example.com`,
+      name: 'Regular User',
+      password: hashedPassword,
+      role: 'user',
+      status: 'active'
+    };
+    
+    adminUser = {
+      id: 2,
+      email: `admin_${Date.now()}@example.com`,
+      name: 'Admin User',
+      password: hashedPassword,
+      role: 'admin',
+      status: 'active'
+    };
+    
     cleanupUsers.push(regularUser.id, adminUser.id);
     
     regularToken = generateToken(regularUser);
@@ -38,8 +50,7 @@ describe('Users API Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await userFactory.deleteUsers(cleanupUsers);
-    await pool.end();
+    cleanupUsers = [];
   });
 
   describe('GET /api/v1/users/me', () => {

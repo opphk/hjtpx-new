@@ -25,11 +25,13 @@ module.exports = {
     '^../../config/database/db$': '<rootDir>/tests/__mocks__/database.js',
     '^../config/database/db$': '<rootDir>/tests/__mocks__/database.js',
     '^../../../config/database/db$': '<rootDir>/tests/__mocks__/database.js',
-    '^config/redis/client$': '<rootDir>/src/config/redis/client.js',
-    '^src/config/redis/client$': '<rootDir>/src/config/redis/client.js',
-    '^../../../config/redis/client$': '<rootDir>/src/config/redis/client.js',
-    '^../../config/redis/client$': '<rootDir>/src/config/redis/client.js',
-    '^../config/redis/client$': '<rootDir>/src/config/redis/client.js'
+    '^config/redis/client$': '<rootDir>/tests/__mocks__/redis.js',
+    '^src/config/redis/client$': '<rootDir>/tests/__mocks__/redis.js',
+    '^../../../config/redis/client$': '<rootDir>/tests/__mocks__/redis.js',
+    '^../../config/redis/client$': '<rootDir>/tests/__mocks__/redis.js',
+    '^../config/redis/client$': '<rootDir>/tests/__mocks__/redis.js',
+    '^backend/config/redis/client$': '<rootDir>/tests/__mocks__/redis.js',
+    '^src/backend/config/redis/client$': '<rootDir>/tests/__mocks__/redis.js'
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   clearMocks: true,

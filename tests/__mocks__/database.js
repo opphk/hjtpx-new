@@ -4,10 +4,12 @@ const mockTransaction = jest.fn();
 const mockHealthCheck = jest.fn();
 const mockGetPoolStats = jest.fn();
 const mockClose = jest.fn();
+const mockEnd = jest.fn().mockResolvedValue(undefined);
 
 const pool = {
   query: mockQuery,
   connect: mockGetClient,
+  end: mockEnd,
   totalCount: 0,
   idleCount: 0,
   waitingCount: 0
@@ -20,5 +22,6 @@ module.exports = {
   healthCheck: mockHealthCheck,
   getPoolStats: mockGetPoolStats,
   close: mockClose,
+  end: mockEnd,
   pool
 };
