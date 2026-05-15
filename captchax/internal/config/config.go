@@ -3,15 +3,25 @@ package config
 import "time"
 
 type RiskConfig struct {
-	SlideSpeedThresholdFast   time.Duration
-	SlideSpeedThresholdSlow   time.Duration
-	SmoothnessThreshold       float64
-	JitterThreshold           float64
-	MaxFailureCount           int
-	CriticalFailureCount      int
-	BlockDuration             time.Duration
-	HighFrequencyThreshold    int64
-	RiskScoreThresholds       RiskScoreThresholds
+	SlideSpeedThresholdFast       time.Duration
+	SlideSpeedThresholdSlow       time.Duration
+	SmoothnessThreshold           float64
+	JitterThreshold               float64
+	MaxFailureCount               int
+	CriticalFailureCount          int
+	BlockDuration                 time.Duration
+	HighFrequencyThreshold        int64
+	RiskScoreThresholds           RiskScoreThresholds
+	// 新添加的配置项
+	AccelerationThreshold         float64     // 加速度异常阈值
+	VelocityConsistencyThreshold  float64     // 速度一致性阈值
+	ClickIntervalMin              int64       // 最小点击间隔(毫秒)
+	ClickIntervalMax              int64       // 最大点击间隔(毫秒)
+	DoubleClickThreshold          int64       // 双击判断阈值(毫秒)
+	PathCurvatureThreshold        float64     // 路径曲率阈值
+	DirectionChangeThreshold      int         // 方向变化次数阈值
+	PathComplexityThreshold       float64     // 路径复杂度阈值
+	HesitationThreshold           int64       // 犹豫时间阈值(毫秒)
 }
 
 type RiskScoreThresholds struct {
@@ -23,14 +33,24 @@ type RiskScoreThresholds struct {
 
 func DefaultRiskConfig() *RiskConfig {
 	return &RiskConfig{
-		SlideSpeedThresholdFast:   1 * time.Second,
-		SlideSpeedThresholdSlow:   30 * time.Second,
-		SmoothnessThreshold:       0.95,
-		JitterThreshold:           0.1,
-		MaxFailureCount:           3,
-		CriticalFailureCount:      5,
-		BlockDuration:             30 * time.Minute,
-		HighFrequencyThreshold:    100,
+		SlideSpeedThresholdFast:       1 * time.Second,
+		SlideSpeedThresholdSlow:       30 * time.Second,
+		SmoothnessThreshold:           0.95,
+		JitterThreshold:               0.1,
+		MaxFailureCount:               3,
+		CriticalFailureCount:          5,
+		BlockDuration:                 30 * time.Minute,
+		HighFrequencyThreshold:        100,
+		// 新添加的默认配置值
+		AccelerationThreshold:         500.0,
+		VelocityConsistencyThreshold:  0.85,
+		ClickIntervalMin:              50,  // 人类通常不会小于50ms
+		ClickIntervalMax:              5000, // 超过5秒可能有问题
+		DoubleClickThreshold:          500,  // 双击通常在500ms内
+		PathCurvatureThreshold:        0.98,
+		DirectionChangeThreshold:      20,
+		PathComplexityThreshold:       0.3,
+		HesitationThreshold:           2000, // 犹豫超过2秒
 		RiskScoreThresholds: RiskScoreThresholds{
 			Low:      0,
 			Medium:   25,

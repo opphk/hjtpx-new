@@ -58,21 +58,32 @@ func (b *TokenBucket) GetTokens() int64 {
 	return b.tokens
 }
 
+// SlidingWindowLimiter implements a sliding window rate limiter using a circular buffer for better performance.
+// Optimizations:
+// - Uses circular buffer instead of dynamic slice to avoid reallocations
+// - Tracks start/end indices for O(1) buffer operations
+// - Pre-allocates buffer to maxRequests size
 type SlidingWindowLimiter struct {
-	windowSize  time.Duration
+	windowSize   time.Duration
 	maxRequests  int64
-	requests    []time.Time
-	mu          sync.Mutex
+	requests     []time.Time
+	start        int
+	end          int
+	mu           sync.Mutex
 }
 
 func NewSlidingWindowLimiter(windowSize time.Duration, maxRequests int64) *SlidingWindowLimiter {
 	return &SlidingWindowLimiter{
-		windowSize:  windowSize,
-		maxRequests: maxRequests,
-		requests:    make([]time.Time, 0),
+		windowSize:   windowSize,
+		maxRequests:  maxRequests,
+		requests:     make([]time.Time, maxRequests+1), // +1 for circular buffer logic
+		start:        0,
+		end:          0,
 	}
 }
 
+// Allow implements the sliding window rate limiting logic with circular buffer optimization.
+// Time complexity: O(n) in worst case for cleanup, but with much lower constant factor due to pre-allocated buffer
 func (l *SlidingWindowLimiter) Allow() bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -80,19 +91,23 @@ func (l *SlidingWindowLimiter) Allow() bool {
 	now := time.Now()
 	cutoff := now.Add(-l.windowSize)
 
-	var validRequests []time.Time
-	for _, t := range l.requests {
-		if t.After(cutoff) {
-			validRequests = append(validRequests, t)
+	// Clean up expired requests by incrementing start index
+	for l.start != l.end {
+		if l.requests[l.start].After(cutoff) {
+			break
 		}
+		l.start = (l.start + 1) % len(l.requests)
 	}
-	l.requests = validRequests
 
-	if int64(len(l.requests)) >= l.maxRequests {
+	// Check if window is full
+	count := (l.end - l.start + len(l.requests)) % len(l.requests)
+	if int64(count) >= l.maxRequests {
 		return false
 	}
 
-	l.requests = append(l.requests, now)
+	// Add new request
+	l.requests[l.end] = now
+	l.end = (l.end + 1) % len(l.requests)
 	return true
 }
 
@@ -103,13 +118,16 @@ func (l *SlidingWindowLimiter) GetCount() int64 {
 	now := time.Now()
 	cutoff := now.Add(-l.windowSize)
 
-	count := int64(0)
-	for _, t := range l.requests {
-		if t.After(cutoff) {
-			count++
+	// Clean up expired requests by incrementing start index
+	for l.start != l.end {
+		if l.requests[l.start].After(cutoff) {
+			break
 		}
+		l.start = (l.start + 1) % len(l.requests)
 	}
-	return count
+
+	count := (l.end - l.start + len(l.requests)) % len(l.requests)
+	return int64(count)
 }
 
 type AdaptiveRateLimiter struct {

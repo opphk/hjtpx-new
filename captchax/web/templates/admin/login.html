@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CaptchaX 管理后台 - 登录</title>
+    <title data-i18n="admin.title">CaptchaX 管理后台 - 登录</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -60,12 +60,12 @@
                     </svg>
                 </div>
                 <h1 class="text-2xl font-bold text-gray-800">CaptchaX</h1>
-                <p class="text-gray-500 mt-1">行为验证系统管理后台</p>
+                <p class="text-gray-500 mt-1" data-i18n="admin.panel">行为验证系统管理后台</p>
             </div>
 
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.form.username">用户名</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,12 +74,13 @@
                         </div>
                         <input type="text" id="username" name="username"
                             class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                            data-i18n-placeholder="admin.form.placeholder.username"
                             placeholder="请输入用户名" autocomplete="username">
                     </div>
                 </div>
 
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.form.password">密码</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,6 +89,7 @@
                         </div>
                         <input type="password" id="password" name="password"
                             class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                            data-i18n-placeholder="admin.form.placeholder.password"
                             placeholder="请输入密码" autocomplete="current-password">
                     </div>
                 </div>
@@ -97,14 +99,14 @@
 
                 <button type="submit" id="login-btn"
                     class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
-                    登录
+                    <span data-i18n="admin.form.login_btn">登录</span>
                 </button>
             </form>
 
             <div class="mt-6 pt-6 border-t border-gray-200">
                 <div class="flex items-center justify-between text-sm text-gray-500">
-                    <span>演示账号: admin / admin123</span>
-                    <a href="/" class="text-blue-500 hover:text-blue-600 transition">返回首页</a>
+                    <span data-i18n="admin.form.demo_account">演示账号: admin / admin123</span>
+                    <a href="/" class="text-blue-500 hover:text-blue-600 transition" data-i18n="common.back">返回首页</a>
                 </div>
             </div>
         </div>

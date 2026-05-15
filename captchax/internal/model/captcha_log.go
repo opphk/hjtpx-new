@@ -178,3 +178,32 @@ type PoolMetrics struct {
 	MaxIdleClosed    int64 `json:"max_idle_closed"`
 	MaxLifetimeClosed int64 `json:"max_lifetime_closed"`
 }
+
+// CaptchaStats 验证码统计数据
+type CaptchaStats struct {
+	Total    int64 `json:"total"`
+	Verified int64 `json:"verified"`
+	Rejected int64 `json:"rejected"`
+}
+
+// TrendPoint 趋势数据点
+type TrendPoint struct {
+	Time     string `json:"time"`
+	Verified int64  `json:"verified"`
+	Rejected int64  `json:"rejected"`
+}
+
+// TypeDistribution 验证码类型分布
+type TypeDistribution struct {
+	Type  string `json:"type"`
+	Count int64  `json:"count"`
+}
+
+// IPRanking IP排行数据
+type IPRanking struct {
+	IP          string  `json:"ip"`
+	Total       int64   `json:"total"`
+	Verified    int64   `json:"verified"`
+	SuccessRate float64 `json:"success_rate"`
+	Status      string  `json:"status"`
+}

@@ -1,10 +1,11 @@
 (function() {
     'use strict';
 
-    const API_BASE = '/api/admin';
+    const API_BASE = '/admin/api';
     const POLL_INTERVAL = 30000;
     const POLL_INTERVAL_FAST = 10000;
 
+    // API Client
     const ApiClient = {
         async request(endpoint, options = {}) {
             const url = API_BASE + endpoint;
@@ -27,7 +28,7 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || '请求失败');
+                    throw new Error(data.message || 'Request failed');
                 }
 
                 return data;
@@ -39,14 +40,14 @@
 
         auth: {
             async login(username, password) {
-                return ApiClient.request('/auth/login', {
+                return ApiClient.request('/login', {
                     method: 'POST',
                     body: { username, password }
                 });
             },
 
             async logout() {
-                return ApiClient.request('/auth/logout', {
+                return ApiClient.request('/logout', {
                     method: 'POST'
                 });
             },
@@ -60,7 +61,7 @@
 
         stats: {
             async getDashboard() {
-                return ApiClient.request('/stats/dashboard', {
+                return ApiClient.request('/dashboard', {
                     method: 'GET'
                 });
             },
@@ -105,7 +106,7 @@
 
             async update(config) {
                 return ApiClient.request('/config', {
-                    method: 'PUT',
+                    method: 'POST',
                     body: config
                 });
             }
@@ -131,26 +132,6 @@
                 return ApiClient.request(`/whitelist/${id}`, {
                     method: 'DELETE'
                 });
-            },
-
-            async batchDelete(ids) {
-                return ApiClient.request('/whitelist/batch-delete', {
-                    method: 'POST',
-                    body: { ids }
-                });
-            },
-
-            async batchAdd(entries) {
-                return ApiClient.request('/whitelist/batch-add', {
-                    method: 'POST',
-                    body: { entries }
-                });
-            },
-
-            async export(format = 'csv') {
-                return ApiClient.request(`/whitelist/export?format=${format}`, {
-                    method: 'GET'
-                });
             }
         },
 
@@ -175,45 +156,166 @@
                 return ApiClient.request(`/blacklist/${id}`, {
                     method: 'DELETE'
                 });
-            },
-
-            async unban(id) {
-                return ApiClient.request(`/blacklist/${id}/unban`, {
-                    method: 'POST'
-                });
-            },
-
-            async batchDelete(ids) {
-                return ApiClient.request('/blacklist/batch-delete', {
-                    method: 'POST',
-                    body: { ids }
-                });
-            },
-
-            async batchUnban(ids) {
-                return ApiClient.request('/blacklist/batch-unban', {
-                    method: 'POST',
-                    body: { ids }
-                });
-            },
-
-            async batchBan(ids, reason) {
-                return ApiClient.request('/blacklist/batch-ban', {
-                    method: 'POST',
-                    body: { ids, reason }
-                });
-            },
-
-            async export(format = 'csv') {
-                return ApiClient.request(`/blacklist/export?format=${format}`, {
-                    method: 'GET'
-                });
             }
         }
     };
 
     window.AdminApi = ApiClient;
 
+    // i18n Helper
+    const I18nHelper = {
+        initialized: false,
+        currentLocale: 'zh-CN',
+        translations: {},
+
+        async init() {
+            try {
+                const locales = ['zh-CN', 'en', 'ja', 'ko'];
+                const promises = locales.map(locale => 
+                    fetch(`/i18n/${locale}.json`)
+                        .then(res => res.ok ? res.json() : null)
+                        .catch(() => null)
+                );
+
+                const results = await Promise.all(promises);
+                locales.forEach((locale, i) => {
+                    if (results[i]) {
+                        this.translations[locale] = results[i];
+                    }
+                });
+
+                const stored = localStorage.getItem('admin_locale');
+                if (stored && this.translations[stored]) {
+                    this.currentLocale = stored;
+                } else {
+                    const browserLang = navigator.language || navigator.userLanguage;
+                    for (const locale of locales) {
+                        if (browserLang.startsWith(locale)) {
+                            this.currentLocale = locale;
+                            break;
+                        }
+                    }
+                }
+
+                this.initialized = true;
+                this.applyTranslations();
+            } catch (e) {
+                console.warn('i18n init failed:', e);
+            }
+        },
+
+        t(key, params = {}) {
+            const keys = key.split('.');
+            let value = this.translations[this.currentLocale];
+            
+            for (const k of keys) {
+                if (value && typeof value === 'object') {
+                    value = value[k];
+                } else {
+                    value = undefined;
+                    break;
+                }
+            }
+
+            if (typeof value !== 'string') {
+                value = key;
+            }
+
+            return value.replace(/\{(\w+)\}/g, (match, k) => 
+                params[k] !== undefined ? params[k] : match
+            );
+        },
+
+        setLocale(locale) {
+            if (this.translations[locale]) {
+                this.currentLocale = locale;
+                localStorage.setItem('admin_locale', locale);
+                document.documentElement.lang = locale;
+                this.applyTranslations();
+            }
+        },
+
+        applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = this.t(key);
+            });
+
+            document.querySelectorAll('[data-i18n-attr]').forEach(el => {
+                try {
+                    const attrs = JSON.parse(el.getAttribute('data-i18n-attr'));
+                    Object.entries(attrs).forEach(([attr, key]) => {
+                        el.setAttribute(attr, this.t(key));
+                    });
+                } catch (e) {}
+            });
+        },
+
+        initLanguageSwitcher() {
+            const container = document.getElementById('language-switcher');
+            if (!container) return;
+
+            const locales = [
+                { code: 'zh-CN', name: '简体中文', flag: '🇨🇳' },
+                { code: 'en', name: 'English', flag: '🇺🇸' },
+                { code: 'ja', name: '日本語', flag: '🇯🇵' },
+                { code: 'ko', name: '한국어', flag: '🇰🇷' }
+            ];
+
+            container.innerHTML = `
+                <div class="relative">
+                    <button id="lang-toggle" class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+                        <span id="current-flag">${locales.find(l => l.code === this.currentLocale)?.flag || '🌐'}</span>
+                        <span class="text-sm" id="current-lang-name">${locales.find(l => l.code === this.currentLocale)?.name || 'Language'}</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-50">
+                        ${locales.map(l => `
+                            <button data-lang="${l.code}" class="w-full flex items-center space-x-3 px-4 py-2 hover:bg-gray-100 transition text-left ${l.code === this.currentLocale ? 'bg-blue-50 text-blue-600' : ''}">
+                                <span class="text-lg">${l.flag}</span>
+                                <span class="text-sm">${l.name}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            const toggle = document.getElementById('lang-toggle');
+            const dropdown = document.getElementById('lang-dropdown');
+
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            dropdown.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-lang]');
+                if (btn) {
+                    const locale = btn.dataset.lang;
+                    this.setLocale(locale);
+                    const flag = locales.find(l => l.code === locale)?.flag;
+                    const name = locales.find(l => l.code === locale)?.name;
+                    document.getElementById('current-flag').textContent = flag;
+                    document.getElementById('current-lang-name').textContent = name;
+                    dropdown.querySelectorAll('[data-lang]').forEach(b => {
+                        b.classList.remove('bg-blue-50', 'text-blue-600');
+                        if (b.dataset.lang === locale) {
+                            b.classList.add('bg-blue-50', 'text-blue-600');
+                        }
+                    });
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', () => dropdown.classList.add('hidden'));
+        }
+    };
+
+    window.I18nHelper = I18nHelper;
+
+    // UI Controller
     const UIController = {
         showToast(message, type = 'info') {
             const container = document.getElementById('toast-container') || this.createToastContainer();
@@ -253,7 +355,7 @@
             return container;
         },
 
-        showLoading(element, text = '加载中...') {
+        showLoading(element, text = 'Loading...') {
             if (!element) return;
             element.dataset.originalContent = element.innerHTML;
             element.disabled = true;
@@ -269,7 +371,7 @@
             delete element.dataset.originalContent;
         },
 
-        confirm(message, title = '确认操作') {
+        confirm(message, title = 'Confirm') {
             return new Promise((resolve) => {
                 const overlay = document.createElement('div');
                 overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
@@ -285,11 +387,15 @@
                         </div>
                         <p class="text-gray-600 mb-6">${message}</p>
                         <div class="flex justify-end space-x-3">
-                            <button class="cancel-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">取消</button>
-                            <button class="confirm-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">确定</button>
+                            <button class="cancel-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition" data-i18n="common.cancel">Cancel</button>
+                            <button class="confirm-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition" data-i18n="common.confirm">Confirm</button>
                         </div>
                     </div>
                 `;
+
+                if (I18nHelper.initialized) {
+                    I18nHelper.applyTranslations();
+                }
 
                 document.body.appendChild(overlay);
 
@@ -314,288 +420,33 @@
 
         formatNumber(num) {
             if (num === null || num === undefined) return '0';
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(1) + 'M';
-            }
-            if (num >= 1000) {
-                return (num / 1000).toFixed(1) + 'K';
-            }
-            return num.toString();
+            return new Intl.NumberFormat().format(num);
         },
 
         formatDate(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
-            return date.toLocaleString('zh-CN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            return date.toLocaleString(I18nHelper.currentLocale);
         },
 
         formatDuration(seconds) {
-            if (seconds < 60) return seconds + '秒';
-            if (seconds < 3600) return Math.floor(seconds / 60) + '分钟';
+            if (seconds < 60) return seconds + 's';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm';
             const hours = Math.floor(seconds / 3600);
             const mins = Math.floor((seconds % 3600) / 60);
-            return `${hours}小时${mins}分钟`;
+            return `${hours}h ${mins}m`;
         }
     };
 
     window.AdminUI = UIController;
 
-    const FormValidator = {
-        rules: {
-            required: (value) => value && value.trim() !== '',
-            email: (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-            ip: (value) => !value || /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(value),
-            ipv4: (value) => !value || /^(\d{1,3}\.){3}\d{1,3}$/.test(value),
-            ipv4Cidr: (value) => !value || /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/.test(value),
-            number: (value) => !value || !isNaN(parseFloat(value)),
-            minLength: (value, min) => !value || value.length >= min,
-            maxLength: (value, max) => !value || value.length <= max,
-            range: (value, min, max) => {
-                const num = parseFloat(value);
-                return !isNaN(num) && num >= min && num <= max;
-            }
-        },
-
-        messages: {
-            required: '此字段为必填项',
-            email: '请输入有效的邮箱地址',
-            ip: '请输入有效的IP地址或CIDR格式',
-            ipv4: '请输入有效的IPv4地址',
-            ipv4Cidr: '请输入有效的CIDR格式地址',
-            number: '请输入有效的数字',
-            minLength: (min) => `最少需要 ${min} 个字符`,
-            maxLength: (max) => `最多允许 ${max} 个字符`,
-            range: (min, max) => `数值必须在 ${min} 到 ${max} 之间`
-        },
-
-        validateField(input, rules) {
-            const value = input.value;
-            const errors = [];
-
-            for (const rule of rules) {
-                if (typeof rule === 'string') {
-                    if (!this.rules[rule](value)) {
-                        errors.push(this.messages[rule]);
-                    }
-                } else if (typeof rule === 'object') {
-                    const { type, params, message } = rule;
-                    if (type === 'minLength' && !this.rules.minLength(value, params[0])) {
-                        errors.push(message || this.messages.minLength(params[0]));
-                    } else if (type === 'maxLength' && !this.rules.maxLength(value, params[0])) {
-                        errors.push(message || this.messages.maxLength(params[0]));
-                    } else if (type === 'range' && !this.rules.range(value, params[0], params[1])) {
-                        errors.push(message || this.messages.range(params[0], params[1]));
-                    } else if (type && !this.rules[type]) {
-                        errors.push(message || `无效的验证规则: ${type}`);
-                    } else if (type && !this.rules[type](value)) {
-                        errors.push(message || this.messages[type] || '验证失败');
-                    }
-                }
-            }
-
-            return errors;
-        },
-
-        showError(input, errors) {
-            const wrapper = input.closest('.form-group') || input.parentElement;
-            const existingError = wrapper.querySelector('.error-message');
-
-            input.classList.add('border-red-500');
-            input.classList.remove('border-gray-300');
-
-            if (existingError) {
-                existingError.remove();
-            }
-
-            if (errors.length > 0) {
-                const errorEl = document.createElement('p');
-                errorEl.className = 'error-message text-red-500 text-sm mt-1';
-                errorEl.textContent = errors[0];
-                wrapper.appendChild(errorEl);
-            }
-        },
-
-        clearError(input) {
-            const wrapper = input.closest('.form-group') || input.parentElement;
-            const existingError = wrapper.querySelector('.error-message');
-
-            input.classList.remove('border-red-500');
-            input.classList.add('border-gray-300');
-
-            if (existingError) {
-                existingError.remove();
-            }
-        },
-
-        validateForm(form) {
-            const inputs = form.querySelectorAll('[data-validate]');
-            let isValid = true;
-
-            inputs.forEach(input => {
-                const rulesStr = input.dataset.validate;
-                if (!rulesStr) return;
-
-                try {
-                    const rules = JSON.parse(rulesStr);
-                    const errors = this.validateField(input, rules);
-
-                    if (errors.length > 0) {
-                        isValid = false;
-                        this.showError(input, errors);
-                    } else {
-                        this.clearError(input);
-                    }
-                } catch (e) {
-                    console.error('Invalid validate rule:', e);
-                }
-            });
-
-            return isValid;
-        },
-
-        initFormValidation(form) {
-            const inputs = form.querySelectorAll('[data-validate]');
-
-            inputs.forEach(input => {
-                input.addEventListener('blur', () => {
-                    const rulesStr = input.dataset.validate;
-                    if (!rulesStr) return;
-
-                    try {
-                        const rules = JSON.parse(rulesStr);
-                        const errors = this.validateField(input, rules);
-
-                        if (errors.length > 0) {
-                            this.showError(input, errors);
-                        } else {
-                            this.clearError(input);
-                        }
-                    } catch (e) {
-                        console.error('Invalid validate rule:', e);
-                    }
-                });
-
-                input.addEventListener('input', () => {
-                    const wrapper = input.closest('.form-group') || input.parentElement;
-                    const existingError = wrapper.querySelector('.error-message');
-                    if (existingError && input.classList.contains('border-red-500')) {
-                        this.clearError(input);
-                    }
-                });
-            });
-        }
-    };
-
-    window.FormValidator = FormValidator;
-
-    const ExportHelper = {
-        downloadCSV(data, filename, columns) {
-            if (!data || data.length === 0) {
-                UIController.showToast('没有数据可导出', 'warning');
-                return;
-            }
-
-            const headers = columns.map(col => col.title);
-            const rows = data.map(item =>
-                columns.map(col => {
-                    let value = item[col.key];
-                    if (col.formatter && typeof col.formatter === 'function') {
-                        value = col.formatter(value, item);
-                    }
-                    if (value === null || value === undefined) value = '';
-                    value = String(value).replace(/"/g, '""');
-                    if (value.includes(',') || value.includes('\n') || value.includes('"')) {
-                        value = `"${value}"`;
-                    }
-                    return value;
-                })
-            );
-
-            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-            const BOM = '\uFEFF';
-            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
-
-            this.downloadBlob(blob, filename + '.csv');
-        },
-
-        downloadBlob(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        },
-
-        downloadJSON(data, filename) {
-            const jsonContent = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonContent], { type: 'application/json' });
-            this.downloadBlob(blob, filename + '.json');
-        },
-
-        async exportTable(tableId, filename, columns) {
-            const tbody = document.querySelector(`#${tableId} tbody`);
-            if (!tbody) {
-                UIController.showToast('表格不存在', 'error');
-                return;
-            }
-
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const data = rows.map(row => {
-                const item = {};
-                columns.forEach((col, idx) => {
-                    const cell = row.cells[idx];
-                    if (cell) {
-                        const text = cell.textContent.trim();
-                        item[col.key] = text;
-                    }
-                });
-                return item;
-            }).filter(row => Object.values(row).some(v => v && v !== '-'));
-
-            if (data.length === 0) {
-                UIController.showToast('没有数据可导出', 'warning');
-                return;
-            }
-
-            this.downloadCSV(data, filename, columns);
-            UIController.showToast(`已导出 ${data.length} 条数据`, 'success');
-        },
-
-        async exportFromAPI(apiFn, filename, columns) {
-            try {
-                const data = await apiFn();
-                if (Array.isArray(data)) {
-                    this.downloadCSV(data, filename, columns);
-                    UIController.showToast(`已导出 ${data.length} 条数据`, 'success');
-                } else if (data.data && Array.isArray(data.data)) {
-                    this.downloadCSV(data.data, filename, columns);
-                    UIController.showToast(`已导出 ${data.data.length} 条数据`, 'success');
-                } else {
-                    UIController.showToast('数据格式不正确', 'error');
-                }
-            } catch (error) {
-                UIController.showToast('导出失败: ' + error.message, 'error');
-            }
-        }
-    };
-
-    window.ExportHelper = ExportHelper;
-
+    // Chart Manager
     const ChartManager = {
         charts: {},
 
         initTrendChart(canvasId, data, options = {}) {
             const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
+            if (!ctx || !window.Chart) return;
 
             if (this.charts[canvasId]) {
                 this.charts[canvasId].destroy();
@@ -611,7 +462,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: '验证成功',
+                            label: I18nHelper.t('admin.charts.verified') || 'Verified',
                             data: verifiedData,
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -622,7 +473,7 @@
                             borderWidth: options.borderWidth || 2
                         },
                         {
-                            label: '拦截',
+                            label: I18nHelper.t('admin.charts.rejected') || 'Rejected',
                             data: rejectedData,
                             borderColor: '#ef4444',
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -701,7 +552,7 @@
 
         initDistributionChart(canvasId, data, options = {}) {
             const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
+            if (!ctx || !window.Chart) return;
 
             if (this.charts[canvasId]) {
                 this.charts[canvasId].destroy();
@@ -770,31 +621,25 @@
             return this.charts[canvasId];
         },
 
-        initResultChart(canvasId, data, options = {}) {
+        initBarChart(canvasId, data, options = {}) {
             const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
+            if (!ctx || !window.Chart) return;
 
             if (this.charts[canvasId]) {
                 this.charts[canvasId].destroy();
             }
 
-            const colorMap = {
-                '通过': '#10b981',
-                '失败': '#ef4444',
-                '拦截': '#f59e0b',
-                '通过率': '#3b82f6'
-            };
-
             this.charts[canvasId] = new Chart(ctx, {
-                type: options.type || 'bar',
+                type: 'bar',
                 data: {
-                    labels: data.map(d => d.result || d.label),
+                    labels: data.labels || data.map(d => d.label),
                     datasets: [{
-                        label: options.label || '数量',
-                        data: data.map(d => d.count || d.value),
-                        backgroundColor: data.map(d => colorMap[d.result] || colorMap[d.label] || '#3b82f6'),
-                        borderRadius: 6,
-                        borderSkipped: false
+                        label: options.label || 'Data',
+                        data: data.values || data.map(d => d.value),
+                        backgroundColor: options.colors || 'rgba(59, 130, 246, 0.5)',
+                        borderColor: options.borderColors || 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
                     }]
                 },
                 options: {
@@ -806,7 +651,12 @@
                         },
                         tooltip: {
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return AdminUI.formatNumber(context.parsed.y);
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -821,219 +671,72 @@
                     }
                 }
             });
-        },
-
-        initBarChart(canvasId, data, options = {}) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-
-            if (this.charts[canvasId]) {
-                this.charts[canvasId].destroy();
-            }
-
-            this.charts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels || data.map(d => d.label),
-                    datasets: [{
-                        label: options.label || '数据',
-                        data: data.values || data.map(d => d.value),
-                        backgroundColor: options.colors || 'rgba(59, 130, 246, 0.5)',
-                        borderColor: options.borderColors || 'rgba(59, 130, 246, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return AdminUI.formatNumber(value);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        },
-
-        updateChart(canvasId, newData, type = 'trend') {
-            const chart = this.charts[canvasId];
-            if (!chart) return;
-
-            if (type === 'trend') {
-                chart.data.labels = newData.map(d => d.time);
-                chart.data.datasets[0].data = newData.map(d => d.verified);
-                chart.data.datasets[1].data = newData.map(d => d.rejected);
-            } else if (type === 'distribution') {
-                chart.data.labels = newData.map(d => d.label || d.type);
-                chart.data.datasets[0].data = newData.map(d => d.count || d.value);
-            } else if (type === 'bar') {
-                chart.data.labels = newData.labels || newData.map(d => d.label);
-                chart.data.datasets[0].data = newData.values || newData.map(d => d.value);
-            }
-
-            chart.update('active');
-        },
-
-        destroyChart(canvasId) {
-            if (this.charts[canvasId]) {
-                this.charts[canvasId].destroy();
-                delete this.charts[canvasId];
-            }
         },
 
         destroyAll() {
-            Object.keys(this.charts).forEach(id => this.destroyChart(id));
+            Object.keys(this.charts).forEach(id => {
+                if (this.charts[id]) {
+                    this.charts[id].destroy();
+                    delete this.charts[id];
+                }
+            });
         }
     };
 
     window.AdminCharts = ChartManager;
 
-    const Pagination = {
-        currentPage: 1,
-        pageSize: 20,
-        total: 0,
-        container: null,
-        onPageChange: null,
-        maxButtons: 5,
-
-        init(containerId, pageSize, callback) {
-            this.container = document.getElementById(containerId);
-            this.pageSize = pageSize;
-            this.onPageChange = callback;
-            this.currentPage = 1;
-            this.render();
-        },
-
-        setTotal(total) {
-            this.total = total;
-            this.render();
-        },
-
-        setPage(page) {
-            const totalPages = Math.ceil(this.total / this.pageSize) || 1;
-            this.currentPage = Math.max(1, Math.min(page, totalPages));
-            this.render();
-            if (this.onPageChange) {
-                this.onPageChange(this.currentPage);
-            }
-        },
-
-        setPageSize(size) {
-            this.pageSize = size;
-            this.currentPage = 1;
-            this.render();
-            if (this.onPageChange) {
-                this.onPageChange(this.currentPage);
-            }
-        },
-
-        goToFirst() {
-            this.setPage(1);
-        },
-
-        goToLast() {
-            this.setPage(Math.ceil(this.total / this.pageSize) || 1);
-        },
-
-        prev() {
-            if (this.currentPage > 1) {
-                this.setPage(this.currentPage - 1);
-            }
-        },
-
-        next() {
-            const totalPages = Math.ceil(this.total / this.pageSize) || 1;
-            if (this.currentPage < totalPages) {
-                this.setPage(this.currentPage + 1);
-            }
-        },
-
-        render() {
-            if (!this.container) return;
-
-            const totalPages = Math.ceil(this.total / this.pageSize) || 1;
-            if (totalPages <= 1 && this.total === 0) {
-                this.container.innerHTML = '';
+    // Export Helper
+    const ExportHelper = {
+        downloadCSV(data, filename, columns) {
+            if (!data || data.length === 0) {
+                UIController.showToast('No data to export', 'warning');
                 return;
             }
 
-            const startRecord = (this.currentPage - 1) * this.pageSize + 1;
-            const endRecord = Math.min(this.currentPage * this.pageSize, this.total);
+            const headers = columns.map(col => col.title);
+            const rows = data.map(item =>
+                columns.map(col => {
+                    let value = item[col.key];
+                    if (col.formatter && typeof col.formatter === 'function') {
+                        value = col.formatter(value, item);
+                    }
+                    if (value === null || value === undefined) value = '';
+                    value = String(value).replace(/"/g, '""');
+                    if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+                        value = `"${value}"`;
+                    }
+                    return value;
+                })
+            );
 
-            let html = `<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="text-sm text-gray-600">
-                    显示 ${startRecord}-${endRecord} 条，共 ${this.total} 条
-                </div>
-                <div class="flex items-center space-x-1">`;
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
 
-            html += `<button class="px-3 py-1.5 rounded ${this.currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}" ${this.currentPage === 1 ? 'disabled' : ''} onclick="AdminUI.Pagination?.goToFirst()" title="首页">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
-            </button>`;
+            this.downloadBlob(blob, filename + '.csv');
+        },
 
-            html += `<button class="px-3 py-1.5 rounded ${this.currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}" ${this.currentPage === 1 ? 'disabled' : ''} onclick="AdminUI.Pagination?.prev()">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>`;
+        downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        },
 
-            let startPage = Math.max(1, this.currentPage - Math.floor(this.maxButtons / 2));
-            let endPage = Math.min(totalPages, startPage + this.maxButtons - 1);
-
-            if (endPage - startPage < this.maxButtons - 1) {
-                startPage = Math.max(1, endPage - this.maxButtons + 1);
-            }
-
-            if (startPage > 1) {
-                html += `<button class="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700" onclick="AdminUI.Pagination?.setPage(1)">1</button>`;
-                if (startPage > 2) {
-                    html += '<span class="px-2 text-gray-400">...</span>';
-                }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                html += `<button class="px-3 py-1.5 rounded ${i === this.currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}" onclick="AdminUI.Pagination?.setPage(${i})">${i}</button>`;
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    html += '<span class="px-2 text-gray-400">...</span>';
-                }
-                html += `<button class="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700" onclick="AdminUI.Pagination?.setPage(${totalPages})">${totalPages}</button>`;
-            }
-
-            html += `<button class="px-3 py-1.5 rounded ${this.currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}" ${this.currentPage === totalPages ? 'disabled' : ''} onclick="AdminUI.Pagination?.next()">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </button>`;
-
-            html += `<button class="px-3 py-1.5 rounded ${this.currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}" ${this.currentPage === totalPages ? 'disabled' : ''} onclick="AdminUI.Pagination?.goToLast()" title="末页">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
-            </button>`;
-
-            html += `</div><div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-500">每页</span>
-                <select class="px-2 py-1 border border-gray-300 rounded text-sm" onchange="AdminUI.Pagination?.setPageSize(parseInt(this.value))">
-                    <option value="10" ${this.pageSize === 10 ? 'selected' : ''}>10</option>
-                    <option value="20" ${this.pageSize === 20 ? 'selected' : ''}>20</option>
-                    <option value="50" ${this.pageSize === 50 ? 'selected' : ''}>50</option>
-                    <option value="100" ${this.pageSize === 100 ? 'selected' : ''}>100</option>
-                </select>
-                <span class="text-sm text-gray-500">条</span>
-            </div></div>`;
-
-            this.container.innerHTML = html;
+        downloadJSON(data, filename) {
+            const jsonContent = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonContent], { type: 'application/json' });
+            this.downloadBlob(blob, filename + '.json');
         }
     };
 
-    UIController.Pagination = Pagination;
+    window.ExportHelper = ExportHelper;
 
+    // Realtime Updater
     const RealtimeUpdater = {
         timers: {},
         callbacks: {},
@@ -1066,127 +769,20 @@
             if (this.callbacks[key]) {
                 this.callbacks[key]();
             }
-        },
-
-        refreshAll() {
-            Object.keys(this.callbacks).forEach(key => {
-                if (this.callbacks[key]) {
-                    this.callbacks[key]();
-                }
-            });
-        },
-
-        setInterval(key, interval) {
-            if (this.timers[key] && this.intervals[key] !== interval) {
-                this.intervals[key] = interval;
-                this.stop(key);
-                this.start(key, this.callbacks[key], interval);
-            }
         }
     };
 
     window.RealtimeUpdater = RealtimeUpdater;
 
-    const BatchOperations = {
-        selectedItems: new Set(),
+    // Initialization
+    async function init() {
+        await I18nHelper.init();
+        I18nHelper.initLanguageSwitcher();
+        initEventListeners();
+    }
 
-        init(tableId, checkboxClass = 'row-checkbox') {
-            this.tableId = tableId;
-            this.checkboxClass = checkboxClass;
-            this.selectedItems.clear();
-            this.bindEvents();
-        },
-
-        bindEvents() {
-            const table = document.getElementById(this.tableId);
-            if (!table) return;
-
-            table.addEventListener('change', (e) => {
-                if (e.target.classList.contains(this.checkboxClass)) {
-                    const id = e.target.dataset.id;
-                    if (e.target.checked) {
-                        this.selectedItems.add(id);
-                    } else {
-                        this.selectedItems.delete(id);
-                    }
-                    this.updateMasterCheckbox();
-                    this.updateActionBar();
-                }
-            });
-
-            const masterCheckbox = table.querySelector('.master-checkbox');
-            if (masterCheckbox) {
-                masterCheckbox.addEventListener('change', (e) => {
-                    this.toggleAll(e.target.checked);
-                });
-            }
-        },
-
-        toggleAll(checked) {
-            const checkboxes = document.querySelectorAll(`#${this.tableId} .${this.checkboxClass}`);
-            checkboxes.forEach(cb => {
-                cb.checked = checked;
-                if (checked) {
-                    this.selectedItems.add(cb.dataset.id);
-                } else {
-                    this.selectedItems.delete(cb.dataset.id);
-                }
-            });
-            this.updateActionBar();
-        },
-
-        updateMasterCheckbox() {
-            const table = document.getElementById(this.tableId);
-            if (!table) return;
-
-            const checkboxes = table.querySelectorAll(`.${this.checkboxClass}`);
-            const masterCheckbox = table.querySelector('.master-checkbox');
-
-            if (masterCheckbox && checkboxes.length > 0) {
-                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                const someChecked = Array.from(checkboxes).some(cb => cb.checked);
-
-                masterCheckbox.checked = allChecked;
-                masterCheckbox.indeterminate = someChecked && !allChecked;
-            }
-        },
-
-        updateActionBar() {
-            const actionBar = document.getElementById('batch-action-bar');
-            const countEl = document.getElementById('selected-count');
-
-            if (actionBar) {
-                actionBar.classList.toggle('hidden', this.selectedItems.size === 0);
-            }
-            if (countEl) {
-                countEl.textContent = this.selectedItems.size;
-            }
-        },
-
-        getSelected() {
-            return Array.from(this.selectedItems);
-        },
-
-        clearSelection() {
-            this.selectedItems.clear();
-            const checkboxes = document.querySelectorAll(`#${this.tableId} .${this.checkboxClass}`);
-            checkboxes.forEach(cb => {
-                cb.checked = false;
-            });
-            this.updateMasterCheckbox();
-            this.updateActionBar();
-        },
-
-        selectAll(items) {
-            items.forEach(item => this.selectedItems.add(item.id || item));
-            this.updateMasterCheckbox();
-            this.updateActionBar();
-        }
-    };
-
-    window.BatchOperations = BatchOperations;
-
-    document.addEventListener('DOMContentLoaded', function() {
+    function initEventListeners() {
+        // Login form
         const loginForm = document.getElementById('login-form');
         if (loginForm) {
             loginForm.addEventListener('submit', async function(e) {
@@ -1198,12 +794,12 @@
                 const errorDiv = document.getElementById('login-error');
 
                 if (!username.value.trim() || !password.value) {
-                    errorDiv.textContent = '请输入用户名和密码';
+                    errorDiv.textContent = I18nHelper.t('admin.form.loginRequired') || 'Please enter username and password';
                     errorDiv.classList.remove('hidden');
                     return;
                 }
 
-                UIController.showLoading(submitBtn);
+                UIController.showLoading(submitBtn, I18nHelper.t('common.loading') || 'Loading...');
                 errorDiv.classList.add('hidden');
 
                 try {
@@ -1211,7 +807,7 @@
                     localStorage.setItem('admin_token', result.token);
                     window.location.href = '/admin/dashboard';
                 } catch (error) {
-                    errorDiv.textContent = error.message || '登录失败，请检查用户名和密码';
+                    errorDiv.textContent = error.message || I18nHelper.t('admin.form.loginError') || 'Login failed';
                     errorDiv.classList.remove('hidden');
                 } finally {
                     UIController.hideLoading(submitBtn);
@@ -1219,6 +815,7 @@
             });
         }
 
+        // Mobile menu
         const sidebar = document.getElementById('sidebar');
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         if (mobileMenuBtn && sidebar) {
@@ -1233,18 +830,14 @@
             });
         }
 
-        document.querySelectorAll('[data-page]').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.dataset.page;
-                window.location.href = `/admin/${page}`;
-            });
-        });
-
+        // Logout button
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async function() {
-                const confirmed = await UIController.confirm('确定要退出登录吗？');
+                const confirmed = await UIController.confirm(
+                    I18nHelper.t('admin.logoutConfirm') || 'Are you sure you want to logout?',
+                    I18nHelper.t('admin.logout') || 'Logout'
+                );
                 if (confirmed) {
                     try {
                         await ApiClient.auth.logout();
@@ -1254,15 +847,71 @@
                 }
             });
         }
-    });
+
+        // Refresh button
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                RealtimeUpdater.refresh('dashboard');
+                UIController.showToast(I18nHelper.t('common.dataRefreshed') || 'Data refreshed', 'success');
+            });
+        }
+    }
+
+    // Page-specific functions (used in templates)
+    function generateMockTrendData() {
+        const data = [];
+        for (let i = 23; i >= 0; i--) {
+            const time = new Date();
+            time.setHours(time.getHours() - i);
+            data.push({
+                time: time.getHours() + ':00',
+                verified: Math.floor(Math.random() * 500) + 200,
+                rejected: Math.floor(Math.random() * 50) + 10
+            });
+        }
+        return data;
+    }
+
+    function generateMockDistribution() {
+        return [
+            { type: 'slider', label: 'Slider', count: 5420 },
+            { type: 'click', label: 'Click', count: 3890 },
+            { type: 'rotate', label: 'Rotate', count: 2560 }
+        ];
+    }
+
+    function generateMockIpRanking() {
+        const ips = [];
+        const statuses = ['normal', 'normal', 'normal', 'suspicious', 'suspicious', 'blocked'];
+        for (let i = 0; i < 10; i++) {
+            const total = Math.floor(Math.random() * 5000) + 100;
+            const verified = Math.floor(total * (0.8 + Math.random() * 0.2));
+            ips.push({
+                ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+                total: total,
+                verified: verified,
+                successRate: ((verified / total) * 100).toFixed(1),
+                status: statuses[Math.floor(Math.random() * statuses.length)]
+            });
+        }
+        return ips.sort((a, b) => b.total - a.total);
+    }
+
+    window.generateMockTrendData = generateMockTrendData;
+    window.generateMockDistribution = generateMockDistribution;
+    window.generateMockIpRanking = generateMockIpRanking;
+
+    // Init on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 
     window.addEventListener('beforeunload', function() {
         AdminCharts.destroyAll();
         RealtimeUpdater.stopAll();
-    });
-
-    window.addEventListener('hashchange', function() {
-        RealtimeUpdater.refreshAll();
     });
 
 })();

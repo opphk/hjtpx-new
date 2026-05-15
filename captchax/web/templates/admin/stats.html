@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>统计分析 - CaptchaX 管理后台</title>
+    <title data-i18n="admin.stats">统计分析 - CaptchaX 管理后台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
@@ -55,45 +55,45 @@
                         </div>
                         <div>
                             <h1 class="font-bold text-gray-800">CaptchaX</h1>
-                            <p class="text-xs text-gray-500">管理后台</p>
+                            <p class="text-xs text-gray-500" data-i18n="admin.panel">管理后台</p>
                         </div>
                     </div>
                 </div>
 
                 <nav class="flex-1 py-4 overflow-y-auto">
-                    <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">主菜单</div>
+                    <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider" data-i18n="admin.menu_main">主菜单</div>
                     <a href="/admin/dashboard" class="sidebar-link flex items-center px-6 py-3 text-gray-700 transition">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
-                        仪表盘
+                        <span data-i18n="admin.dashboard">仪表盘</span>
                     </a>
                     <a href="/admin/stats" class="sidebar-link active flex items-center px-6 py-3 text-gray-700 transition">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
-                        统计分析
+                        <span data-i18n="admin.stats">统计分析</span>
                     </a>
                     <a href="/admin/config" class="sidebar-link flex items-center px-6 py-3 text-gray-700 transition">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826 2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
-                        系统配置
+                        <span data-i18n="admin.config">系统配置</span>
                     </a>
 
-                    <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">安全管控</div>
+                    <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider" data-i18n="admin.security_control">安全管控</div>
                     <a href="/admin/whitelist" class="sidebar-link flex items-center px-6 py-3 text-gray-700 transition">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        白名单
+                        <span data-i18n="admin.whitelist">白名单</span>
                     </a>
                     <a href="/admin/blacklist" class="sidebar-link flex items-center px-6 py-3 text-gray-700 transition">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77-1.333.192 3 1.732 3z"></path>
                         </svg>
-                        黑名单
+                        <span data-i18n="admin.blacklist">黑名单</span>
                     </a>
                 </nav>
 
@@ -106,11 +106,14 @@
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-700">管理员</p>
-                                <p class="text-xs text-gray-500">在线</p>
+                                <p class="text-sm font-medium text-gray-700" data-i18n="admin.admin">管理员</p>
+                                <p class="text-xs text-green-500 flex items-center">
+                                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></span>
+                                    <span data-i18n="common.online">在线</span>
+                                </p>
                             </div>
                         </div>
-                        <button id="logout-btn" class="p-2 text-gray-400 hover:text-red-500 transition">
+                        <button id="logout-btn" class="p-2 text-gray-400 hover:text-red-500 transition" data-i18n-attr="{'title': 'admin.logout'}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                             </svg>
@@ -128,7 +131,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
-                    <h2 class="text-xl font-semibold text-gray-800">统计分析</h2>
+                    <h2 class="text-xl font-semibold text-gray-800" data-i18n="admin.stats">统计分析</h2>
                     <div class="flex items-center space-x-3">
                         <select id="export-format" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="csv">导出 CSV</option>
@@ -139,7 +142,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                             </svg>
-                            导出数据
+                            <span data-i18n="admin.export">导出数据</span>
                         </button>
                     </div>
                 </div>
@@ -150,7 +153,7 @@
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-500">总验证量</p>
+                                <p class="text-sm text-gray-500" data-i18n="admin.stats.total_verifications">总验证量</p>
                                 <p class="text-2xl font-bold text-gray-800" id="stat-total">0</p>
                             </div>
                             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -163,7 +166,7 @@
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-500">验证成功率</p>
+                                <p class="text-sm text-gray-500" data-i18n="admin.stats.success_rate">验证成功率</p>
                                 <p class="text-2xl font-bold text-green-600" id="stat-success-rate">0%</p>
                             </div>
                             <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -176,7 +179,7 @@
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-500">总拦截量</p>
+                                <p class="text-sm text-gray-500" data-i18n="admin.stats.total_blocked">总拦截量</p>
                                 <p class="text-2xl font-bold text-red-600" id="stat-blocked">0</p>
                             </div>
                             <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
@@ -189,7 +192,7 @@
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-500">平均响应时间</p>
+                                <p class="text-sm text-gray-500" data-i18n="admin.stats.avg_response_time">平均响应时间</p>
                                 <p class="text-2xl font-bold text-purple-600" id="stat-avg-time">0ms</p>
                             </div>
                             <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -203,13 +206,13 @@
 
                 <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">验证趋势</h3>
+                        <h3 class="text-lg font-semibold text-gray-800" data-i18n="admin.charts.trend">验证趋势</h3>
                         <div class="flex items-center space-x-3">
                             <select id="trend-period" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="24">最近24小时</option>
-                                <option value="48">最近48小时</option>
-                                <option value="72">最近72小时</option>
-                                <option value="168">最近7天</option>
+                                <option value="24" data-i18n="admin.charts.last_24h">最近24小时</option>
+                                <option value="48" data-i18n="admin.charts.last_48h">最近48小时</option>
+                                <option value="72" data-i18n="admin.charts.last_72h">最近72小时</option>
+                                <option value="168" data-i18n="admin.charts.last_7d">最近7天</option>
                             </select>
                         </div>
                     </div>
@@ -221,8 +224,8 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">验证码类型分布</h3>
-                            <button id="export-distribution-btn" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
+                            <h3 class="text-lg font-semibold text-gray-800" data-i18n="admin.captcha_types">验证码类型分布</h3>
+                            <button id="export-distribution-btn" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition" data-i18n-attr="{'title': 'admin.export'}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
@@ -235,7 +238,7 @@
 
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">验证结果统计</h3>
+                            <h3 class="text-lg font-semibold text-gray-800" data-i18n="admin.stats.result_stats">验证结果统计</h3>
                         </div>
                         <div class="chart-container">
                             <canvas id="result-chart"></canvas>
@@ -246,18 +249,18 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">IP访问排行 TOP 10</h3>
-                            <a href="/admin/blacklist" class="text-sm text-blue-500 hover:text-blue-600">查看全部</a>
+                            <h3 class="text-lg font-semibold text-gray-800" data-i18n="admin.ip_ranking">IP访问排行 TOP 10</h3>
+                            <a href="/admin/blacklist" class="text-sm text-blue-500 hover:text-blue-600" data-i18n="admin.more">查看全部</a>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead>
                                     <tr class="text-left text-sm text-gray-500 border-b">
-                                        <th class="pb-3 font-medium">排名</th>
-                                        <th class="pb-3 font-medium">IP地址</th>
-                                        <th class="pb-3 font-medium">验证次数</th>
-                                        <th class="pb-3 font-medium">成功率</th>
-                                        <th class="pb-3 font-medium">状态</th>
+                                        <th class="pb-3 font-medium" data-i18n="admin.table.rank">排名</th>
+                                        <th class="pb-3 font-medium" data-i18n="admin.table.ip">IP地址</th>
+                                        <th class="pb-3 font-medium" data-i18n="admin.table.count">验证次数</th>
+                                        <th class="pb-3 font-medium" data-i18n="admin.table.success_rate">成功率</th>
+                                        <th class="pb-3 font-medium" data-i18n="common.status">状态</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ip-ranking-table" class="text-sm">
@@ -268,7 +271,7 @@
 
                     <div class="bg-white rounded-xl p-6 shadow-sm">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">每日验证量对比</h3>
+                            <h3 class="text-lg font-semibold text-gray-800" data-i18n="admin.stats.daily_comparison">每日验证量对比</h3>
                         </div>
                         <div class="chart-container">
                             <canvas id="daily-chart"></canvas>
@@ -281,7 +284,10 @@
 
     <script src="/static/admin.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await I18nHelper.init();
+            I18nHelper.initLanguageSwitcher();
+
             let currentTrendData = null;
             let currentDistributionData = null;
             let currentResultData = null;
@@ -318,7 +324,7 @@
 
                 } catch (error) {
                     console.error('Failed to load stats:', error);
-                    AdminUI.showToast('数据加载失败', 'error');
+                    AdminUI.showToast(I18nHelper.t('common.load_failed') || '数据加载失败', 'error');
                 }
             }
 
@@ -341,15 +347,19 @@
             function renderIpRanking(data) {
                 const tbody = document.getElementById('ip-ranking-table');
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-gray-400">暂无数据</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-gray-400" data-i18n="common.no_data">暂无数据</td></tr>';
+                    I18nHelper.applyTranslations();
                     return;
                 }
 
                 tbody.innerHTML = data.slice(0, 10).map((item, index) => {
                     const statusMap = {
-                        '正常': '<span class="px-2 py-0.5 bg-green-100 text-green-600 rounded text-xs">正常</span>',
-                        '可疑': '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded text-xs">可疑</span>',
-                        '已封禁': '<span class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs">已封禁</span>'
+                        '正常': '<span class="px-2 py-0.5 bg-green-100 text-green-600 rounded text-xs">' + (I18nHelper.t('admin.table.normal') || '正常') + '</span>',
+                        '可疑': '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded text-xs">' + (I18nHelper.t('admin.table.suspicious') || '可疑') + '</span>',
+                        '已封禁': '<span class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs">' + (I18nHelper.t('admin.table.blocked') || '已封禁') + '</span>',
+                        'normal': '<span class="px-2 py-0.5 bg-green-100 text-green-600 rounded text-xs">' + (I18nHelper.t('admin.table.normal') || '正常') + '</span>',
+                        'suspicious': '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded text-xs">' + (I18nHelper.t('admin.table.suspicious') || '可疑') + '</span>',
+                        'blocked': '<span class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs">' + (I18nHelper.t('admin.table.blocked') || '已封禁') + '</span>'
                     };
                     const successRate = item.success_rate || ((item.verified / item.total) * 100).toFixed(1);
                     const successClass = successRate >= 90 ? 'text-green-600' : successRate >= 70 ? 'text-yellow-600' : 'text-red-600';
@@ -362,7 +372,7 @@
                             <td class="py-3 font-mono text-sm">${item.ip}</td>
                             <td class="py-3">${AdminUI.formatNumber(item.total || 0)}</td>
                             <td class="py-3 ${successClass}">${successRate}%</td>
-                            <td class="py-3">${statusMap[item.status] || statusMap['正常']}</td>
+                            <td class="py-3">${statusMap[item.status] || statusMap['normal']}</td>
                         </tr>
                     `;
                 }).join('');
@@ -384,7 +394,7 @@
                     labels: dailyData.map(d => d.label),
                     values: dailyData.map(d => d.value)
                 }, {
-                    label: '验证量',
+                    label: I18nHelper.t('admin.stats.verification_count') || '验证量',
                     colors: 'rgba(59, 130, 246, 0.5)',
                     borderColors: 'rgba(59, 130, 246, 1)'
                 });
@@ -415,19 +425,17 @@
 
             function generateMockDistribution() {
                 return [
-                    { type: 'slider', label: '滑动验证码', count: 5420 },
-                    { type: 'click', label: '点选验证码', count: 3890 },
-                    { type: 'rotate', label: '旋转验证码', count: 2560 },
-                    { type: 'number', label: '数字验证码', count: 1240 },
-                    { type: 'math', label: '算术验证码', count: 890 }
+                    { type: 'slider', label: I18nHelper.t('captcha.slider.title') || '滑动验证码', count: 5420 },
+                    { type: 'click', label: I18nHelper.t('captcha.click.title') || '点选验证码', count: 3890 },
+                    { type: 'rotate', label: I18nHelper.t('captcha.rotate.title') || '旋转验证码', count: 2560 }
                 ];
             }
 
             function generateMockResultStats() {
                 return [
-                    { result: '通过', count: 10500 },
-                    { result: '失败', count: 450 },
-                    { result: '拦截', count: 320 }
+                    { result: I18nHelper.t('admin.result.passed') || '通过', count: 10500 },
+                    { result: I18nHelper.t('admin.result.failed') || '失败', count: 450 },
+                    { result: I18nHelper.t('admin.result.blocked') || '拦截', count: 320 }
                 ];
             }
 
@@ -465,12 +473,12 @@
                 if (format === 'json') {
                     ExportHelper.downloadJSON(data, 'captchax_stats_' + new Date().toISOString().split('T')[0]);
                 } else if (format === 'csv') {
-                    const csvRows = [['指标', '数值']];
-                    csvRows.push(['总验证量', data.summary.total]);
-                    csvRows.push(['验证成功率', data.summary.successRate]);
-                    csvRows.push(['总拦截量', data.summary.blocked]);
-                    csvRows.push(['平均响应时间', data.summary.avgTime]);
-                    csvRows.push([], ['时间', '验证成功', '拦截']);
+                    const csvRows = [[I18nHelper.t('admin.export.metric') || '指标', I18nHelper.t('admin.export.value') || '数值']];
+                    csvRows.push([I18nHelper.t('admin.stats.total_verifications') || '总验证量', data.summary.total]);
+                    csvRows.push([I18nHelper.t('admin.stats.success_rate') || '验证成功率', data.summary.successRate]);
+                    csvRows.push([I18nHelper.t('admin.stats.total_blocked') || '总拦截量', data.summary.blocked]);
+                    csvRows.push([I18nHelper.t('admin.stats.avg_response_time') || '平均响应时间', data.summary.avgTime]);
+                    csvRows.push([], [I18nHelper.t('admin.table.time') || '时间', I18nHelper.t('admin.table.verified') || '验证成功', I18nHelper.t('admin.table.rejected') || '拦截']);
 
                     if (currentTrendData) {
                         currentTrendData.forEach(d => {
@@ -483,11 +491,11 @@
                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
                     ExportHelper.downloadBlob(blob, 'captchax_stats_' + new Date().toISOString().split('T')[0] + '.csv');
                 } else {
-                    AdminUI.showToast('Excel导出功能开发中', 'info');
+                    AdminUI.showToast(I18nHelper.t('messages.excel_export_dev') || 'Excel导出功能开发中', 'info');
                     return;
                 }
 
-                AdminUI.showToast('导出成功', 'success');
+                AdminUI.showToast(I18nHelper.t('messages.export_success') || '导出成功', 'success');
             }
 
             document.getElementById('trend-period').addEventListener('change', async function() {
@@ -498,7 +506,7 @@
                     AdminCharts.initTrendChart('trend-chart', trend);
                 } catch (error) {
                     AdminCharts.initTrendChart('trend-chart', generateMockTrendData());
-                    AdminUI.showToast('数据加载失败', 'error');
+                    AdminUI.showToast(I18nHelper.t('common.load_failed') || '数据加载失败', 'error');
                 }
             });
 
@@ -506,8 +514,8 @@
             document.getElementById('export-distribution-btn').addEventListener('click', function() {
                 if (currentDistributionData) {
                     ExportHelper.downloadCSV(currentDistributionData, 'captcha_distribution', [
-                        { key: 'label', title: '类型' },
-                        { key: 'count', title: '数量' }
+                        { key: 'label', title: I18nHelper.t('admin.table.type') || '类型' },
+                        { key: 'count', title: I18nHelper.t('admin.table.count') || '数量' }
                     ]);
                 }
             });

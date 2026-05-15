@@ -1,0 +1,19 @@
+goos: linux
+goarch: amd64
+pkg: captchax/tests/benchmark
+cpu: Intel(R) Xeon(R) Platinum 8457C
+BenchmarkImageGeneration-2               	    1608	    758974 ns/op	    8643 B/op	       8 allocs/op
+BenchmarkCacheGet-2                      	13755916	        88.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheSet-2                      	 7474533	       158.9 ns/op	      64 B/op	       2 allocs/op
+BenchmarkCacheGetMiss-2                  	54694563	        20.53 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsRecordRequest-2          	19159252	        64.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsSnapshot-2               	62133100	        19.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramObserve-2              	37657705	        32.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTokenBucketAllow-2              	12109521	        99.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTokenBucketAllowN-2             	11930404	        97.92 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSlidingWindowLimiter-2          	  538430	      2184 ns/op	    7526 B/op	       7 allocs/op
+BenchmarkCircuitBreakerAllow-2           	36373314	        33.34 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerRecordSuccess-2   	36973480	        32.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerRecordFailure-2   	12236713	        96.66 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	captchax/tests/benchmark	16.439s

@@ -1,10 +1,14 @@
 package monitoring
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
+// Metrics provides atomic-based metrics tracking for high-performance concurrent scenarios.
+// Optimizations:
+// - Uses atomic operations instead of mutex locks for all counter fields
+// - Reduces lock contention significantly in high-throughput environments
 type Metrics struct {
 	requestsTotal   int64
 	requestsSuccess int64
@@ -12,47 +16,37 @@ type Metrics struct {
 	requestDuration *Histogram
 	cacheHit        int64
 	cacheMiss       int64
-	mu              sync.RWMutex
 }
 
+// Histogram uses atomic operations for lock-free observations.
 type Histogram struct {
 	counts [11]int64
-	mu     sync.RWMutex
 }
 
 func (h *Histogram) Observe(duration time.Duration) {
 	ms := duration.Milliseconds()
 	bucket := min(int(ms/10), 10)
 
-	h.mu.Lock()
-	h.counts[bucket]++
-	h.mu.Unlock()
+	atomic.AddInt64(&h.counts[bucket], 1)
 }
 
 func (m *Metrics) RecordRequest(duration time.Duration, success bool) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	m.requestsTotal++
+	atomic.AddInt64(&m.requestsTotal, 1)
 	if success {
-		m.requestsSuccess++
+		atomic.AddInt64(&m.requestsSuccess, 1)
 	} else {
-		m.requestsFailed++
+		atomic.AddInt64(&m.requestsFailed, 1)
 	}
 
 	m.requestDuration.Observe(duration)
 }
 
 func (m *Metrics) RecordCacheHit() {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.cacheHit++
+	atomic.AddInt64(&m.cacheHit, 1)
 }
 
 func (m *Metrics) RecordCacheMiss() {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.cacheMiss++
+	atomic.AddInt64(&m.cacheMiss, 1)
 }
 
 type MetricsSnapshot struct {
@@ -63,20 +57,20 @@ type MetricsSnapshot struct {
 }
 
 func (m *Metrics) Snapshot() MetricsSnapshot {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	total := m.requestsTotal
+	total := atomic.LoadInt64(&m.requestsTotal)
 	if total == 0 {
 		return MetricsSnapshot{}
 	}
 
-	cacheTotal := m.cacheHit + m.cacheMiss
+	success := atomic.LoadInt64(&m.requestsSuccess)
+	hit := atomic.LoadInt64(&m.cacheHit)
+	miss := atomic.LoadInt64(&m.cacheMiss)
+	cacheTotal := hit + miss
 
 	return MetricsSnapshot{
 		RequestsTotal: total,
-		SuccessRate:  float64(m.requestsSuccess) / float64(total),
-		CacheHitRate: float64(m.cacheHit) / float64(cacheTotal),
+		SuccessRate:  float64(success) / float64(total),
+		CacheHitRate: float64(hit) / float64(cacheTotal),
 	}
 }
 

@@ -1,0 +1,34 @@
+goos: linux
+goarch: amd64
+pkg: captchax/tests/benchmark
+cpu: Intel(R) Xeon(R) Platinum 8457C
+BenchmarkImageGeneration-2                   	    1675	    747279 ns/op	    8643 B/op	       8 allocs/op
+BenchmarkCacheGet-2                          	11822221	        93.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheSet-2                          	 1324500	       918.4 ns/op	      64 B/op	       2 allocs/op
+BenchmarkCacheGetMiss-2                      	71665822	        17.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheSetMultiple-2                  	   60140	     20399 ns/op	      64 B/op	       2 allocs/op
+BenchmarkCacheConcurrentGet-2                	18511748	        60.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheConcurrentSet-2                	  527278	      2661 ns/op	      64 B/op	       3 allocs/op
+BenchmarkCacheMixedOperations-2              	  544812	      2033 ns/op	      38 B/op	       2 allocs/op
+BenchmarkMetricsRecordRequest-2              	58858980	        18.08 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsSnapshot-2                   	1000000000	         0.6788 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramObserve-2                  	198370776	         6.049 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsRecordCacheHit-2             	199010331	         6.051 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsRecordCacheMiss-2            	197147340	         6.027 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsConcurrentRecordRequest-2    	43875666	        26.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMetricsConcurrentRecordCache-2      	155945194	         7.673 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramConcurrentObserve-2        	149544564	         8.015 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTokenBucketAllow-2                  	12381735	        98.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTokenBucketAllowN-2                 	12397630	        99.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSlidingWindowLimiter-2              	12435573	        94.59 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerAllow-2               	36702814	        33.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerRecordSuccess-2       	37588615	        32.60 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerRecordFailure-2       	12501930	        95.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTokenBucketConcurrentAllow-2        	 8973415	       135.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSlidingWindowLimiterConcurrent-2    	 8784200	       136.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSlidingWindowLimiterLargeWindow-2   	12828832	        93.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerConcurrentAllow-2     	29041621	        42.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCircuitBreakerStateTransitions-2    	 2167844	       558.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdaptiveRateLimiterAllow-2          	10338646	       114.7 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	captchax/tests/benchmark	39.742s

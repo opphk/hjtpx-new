@@ -4,7 +4,7 @@
     var I18n = {
         currentLocale: 'en',
         defaultLocale: 'en',
-        supportedLocales: ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'ar'],
+        supportedLocales: ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'ar', 'de', 'es', 'fr', 'ru', 'it', 'nl'],
         translations: {},
         listeners: [],
 
@@ -22,7 +22,20 @@
             'ar-AE': 'ar',
             'en': 'en',
             'en-US': 'en',
-            'en-GB': 'en'
+            'en-GB': 'en',
+            'de': 'de',
+            'de-DE': 'de',
+            'es': 'es',
+            'es-ES': 'es',
+            'es-MX': 'es',
+            'fr': 'fr',
+            'fr-FR': 'fr',
+            'ru': 'ru',
+            'ru-RU': 'ru',
+            'it': 'it',
+            'it-IT': 'it',
+            'nl': 'nl',
+            'nl-NL': 'nl'
         },
 
         async init(options) {
