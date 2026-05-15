@@ -3,6 +3,11 @@ const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 const metricsService = require('../services/metricsService');
 
+let roomManager = null;
+let presenceService = null;
+let collaborationService = null;
+let messageStatusService = null;
+
 class WebSocketServer {
   constructor(httpServer) {
     this.heartbeatConfig = {
@@ -60,10 +65,23 @@ class WebSocketServer {
       stateHistory: []
     };
 
+    this.initializeServices();
     this.setupHeartbeatMonitor();
     this.setupConnectionStateMonitor();
     this.setupMiddleware();
     this.setupEventHandlers();
+  }
+
+  async initializeServices() {
+    try {
+      roomManager = require('./room-manager');
+      presenceService = require('./presence-service');
+      collaborationService = require('../services/collaboration/room-service');
+      messageStatusService = require('../services/message-status');
+      logInfo('Collaboration services initialized');
+    } catch (error) {
+      logWarning('Failed to load collaboration services', { error: error.message });
+    }
   }
 
   setupHeartbeatMonitor() {
@@ -271,6 +289,12 @@ class WebSocketServer {
       message: 'Successfully connected to WebSocket server'
     });
 
+    if (presenceService) {
+      presenceService.setUserOnline(socket.id, socket.userId, {
+        platform: socket.handshake.headers['user-agent'] || 'unknown'
+      });
+    }
+
     this.setupSocketEventHandlers(socket);
 
     this.broadcastUserOnlineStatus(socket.userId, true);
@@ -311,6 +335,62 @@ class WebSocketServer {
       }
     });
 
+    socket.on('collaboration:join', (data, callback) => {
+      this.handleCollaborationJoin(socket, data, callback);
+    });
+
+    socket.on('collaboration:leave', (data, callback) => {
+      this.handleCollaborationLeave(socket, data, callback);
+    });
+
+    socket.on('collaboration:operation', (data, callback) => {
+      this.handleCollaborationOperation(socket, data, callback);
+    });
+
+    socket.on('collaboration:cursor', (data) => {
+      this.handleCollaborationCursor(socket, data);
+    });
+
+    socket.on('collaboration:selection', (data) => {
+      this.handleCollaborationSelection(socket, data);
+    });
+
+    socket.on('message:send', (data, callback) => {
+      this.handleSendMessage(socket, data, callback);
+    });
+
+    socket.on('message:edit', (data, callback) => {
+      this.handleEditMessage(socket, data, callback);
+    });
+
+    socket.on('message:delete', (data, callback) => {
+      this.handleDeleteMessage(socket, data, callback);
+    });
+
+    socket.on('message:react', (data, callback) => {
+      this.handleReactToMessage(socket, data, callback);
+    });
+
+    socket.on('message:read', (data, callback) => {
+      this.handleMarkAsRead(socket, data, callback);
+    });
+
+    socket.on('typing:start', (data) => {
+      this.handleStartTyping(socket, data);
+    });
+
+    socket.on('typing:stop', (data) => {
+      this.handleStopTyping(socket, data);
+    });
+
+    socket.on('presence:update', (data) => {
+      this.handlePresenceUpdate(socket, data);
+    });
+
+    socket.on('presence:custom-status', (data, callback) => {
+      this.handleCustomStatus(socket, data, callback);
+    });
+
     socket.on('error', error => {
       this.metrics.errors++;
       logError('Socket error', {
@@ -319,6 +399,322 @@ class WebSocketServer {
         error: error.message
       });
     });
+  }
+
+  async handleCollaborationJoin(socket, data, callback) {
+    try {
+      const { roomId, documentId } = data;
+
+      if (collaborationService) {
+        const result = await collaborationService.joinCollaborationRoom(
+          socket.id,
+          socket.userId,
+          roomId,
+          { documentId }
+        );
+
+        socket.join(`collab:${roomId}`);
+
+        socket.to(`collab:${roomId}`).emit('collab:user-joined', {
+          userId: socket.userId,
+          roomId,
+          timestamp: new Date()
+        });
+
+        if (callback) callback({ success: true, ...result });
+      } else {
+        if (callback) callback({ success: false, error: 'Collaboration service not available' });
+      }
+    } catch (error) {
+      logError('Error joining collaboration room', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleCollaborationLeave(socket, data, callback) {
+    try {
+      const { roomId } = data;
+
+      if (collaborationService) {
+        await collaborationService.leaveCollaborationRoom(
+          socket.id,
+          socket.userId,
+          roomId
+        );
+
+        socket.leave(`collab:${roomId}`);
+
+        socket.to(`collab:${roomId}`).emit('collab:user-left', {
+          userId: socket.userId,
+          roomId,
+          timestamp: new Date()
+        });
+
+        if (callback) callback({ success: true });
+      } else {
+        if (callback) callback({ success: false, error: 'Collaboration service not available' });
+      }
+    } catch (error) {
+      logError('Error leaving collaboration room', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleCollaborationOperation(socket, data, callback) {
+    try {
+      const { docId, operation } = data;
+
+      if (collaborationService) {
+        const result = await collaborationService.applyOperation(docId, operation, socket.userId);
+
+        socket.to(`collab:${collaborationService.getDocumentIdForRoom(docId.replace('doc:', ''))}`).emit('collab:operation', {
+          ...result,
+          userId: socket.userId
+        });
+
+        if (callback) callback({ success: true, ...result });
+      } else {
+        if (callback) callback({ success: false, error: 'Collaboration service not available' });
+      }
+    } catch (error) {
+      logError('Error applying collaboration operation', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  handleCollaborationCursor(socket, data) {
+    const { docId, position } = data;
+
+    if (collaborationService) {
+      collaborationService.updateCursor(docId, socket.id, position, socket.userId);
+
+      socket.to(`collab:${collaborationService.getDocumentIdForRoom(docId.replace('doc:', ''))}`).emit('collab:cursor-update', {
+        socketId: socket.id,
+        userId: socket.userId,
+        position,
+        timestamp: new Date()
+      });
+    }
+  }
+
+  handleCollaborationSelection(socket, data) {
+    const { docId, start, end } = data;
+
+    if (collaborationService) {
+      collaborationService.updateSelection(docId, socket.id, start, end, socket.userId);
+
+      socket.to(`collab:${collaborationService.getDocumentIdForRoom(docId.replace('doc:', ''))}`).emit('collab:selection-update', {
+        socketId: socket.id,
+        userId: socket.userId,
+        start,
+        end,
+        timestamp: new Date()
+      });
+    }
+  }
+
+  async handleSendMessage(socket, data, callback) {
+    try {
+      const { threadId, content, messageType, replyTo, mentions } = data;
+
+      if (messageStatusService) {
+        const message = await messageStatusService.sendMessage({
+          threadId,
+          senderId: socket.userId,
+          content,
+          messageType,
+          replyTo,
+          mentions
+        });
+
+        this.io.to(`thread:${threadId}`).emit('message:new', message);
+
+        if (callback) callback({ success: true, message });
+      } else {
+        if (callback) callback({ success: false, error: 'Message service not available' });
+      }
+    } catch (error) {
+      logError('Error sending message', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleEditMessage(socket, data, callback) {
+    try {
+      const { messageId, content } = data;
+
+      if (messageStatusService) {
+        const result = await messageStatusService.editMessage(messageId, socket.userId, content);
+
+        const message = await messageStatusService.getMessage(messageId);
+        if (message) {
+          this.io.to(`thread:${message.threadId}`).emit('message:edited', result);
+        }
+
+        if (callback) callback({ success: true, ...result });
+      } else {
+        if (callback) callback({ success: false, error: 'Message service not available' });
+      }
+    } catch (error) {
+      logError('Error editing message', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleDeleteMessage(socket, data, callback) {
+    try {
+      const { messageId, hardDelete } = data;
+
+      if (messageStatusService) {
+        const result = await messageStatusService.deleteMessage(messageId, socket.userId, hardDelete);
+
+        const message = await messageStatusService.getMessage(messageId);
+        if (message) {
+          this.io.to(`thread:${message.threadId}`).emit('message:deleted', {
+            messageId,
+            hardDelete
+          });
+        }
+
+        if (callback) callback({ success: true });
+      } else {
+        if (callback) callback({ success: false, error: 'Message service not available' });
+      }
+    } catch (error) {
+      logError('Error deleting message', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleReactToMessage(socket, data, callback) {
+    try {
+      const { messageId, reaction } = data;
+
+      if (messageStatusService) {
+        const result = await messageStatusService.reactToMessage(messageId, socket.userId, reaction);
+
+        const message = await messageStatusService.getMessage(messageId);
+        if (message) {
+          this.io.to(`thread:${message.threadId}`).emit('message:reaction', result);
+        }
+
+        if (callback) callback({ success: true, ...result });
+      } else {
+        if (callback) callback({ success: false, error: 'Message service not available' });
+      }
+    } catch (error) {
+      logError('Error reacting to message', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleMarkAsRead(socket, data, callback) {
+    try {
+      const { messageId } = data;
+
+      if (messageStatusService) {
+        await messageStatusService.markAsRead(messageId, socket.userId);
+
+        const message = await messageStatusService.getMessage(messageId);
+        if (message) {
+          socket.to(`thread:${message.threadId}`).emit('message:read-receipt', {
+            messageId,
+            userId: socket.userId,
+            timestamp: new Date()
+          });
+        }
+
+        if (callback) callback({ success: true });
+      } else {
+        if (callback) callback({ success: false, error: 'Message service not available' });
+      }
+    } catch (error) {
+      logError('Error marking message as read', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleStartTyping(socket, data) {
+    try {
+      const { threadId } = data;
+
+      if (messageStatusService) {
+        await messageStatusService.startTyping(threadId, socket.userId);
+
+        socket.to(`thread:${threadId}`).emit('typing:user-typing', {
+          threadId,
+          userId: socket.userId,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      logError('Error starting typing', { error: error.message });
+    }
+  }
+
+  async handleStopTyping(socket, data) {
+    try {
+      const { threadId } = data;
+
+      if (messageStatusService) {
+        await messageStatusService.stopTyping(threadId, socket.userId);
+
+        socket.to(`thread:${threadId}`).emit('typing:user-stopped', {
+          threadId,
+          userId: socket.userId,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      logError('Error stopping typing', { error: error.message });
+    }
+  }
+
+  async handlePresenceUpdate(socket, data) {
+    try {
+      const { status } = data;
+
+      if (presenceService) {
+        if (status === 'online') {
+          await presenceService.setUserOnline(socket.id, socket.userId, data.metadata || {});
+        } else if (status === 'offline') {
+          await presenceService.setUserOffline(socket.userId, socket.id);
+        } else if (status === 'away') {
+          await presenceService.setUserAway(socket.userId, socket.id, data.reason || 'idle');
+        }
+
+        this.io.emit('presence:update', {
+          userId: socket.userId,
+          status,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      logError('Error updating presence', { error: error.message });
+    }
+  }
+
+  async handleCustomStatus(socket, data, callback) {
+    try {
+      const { customStatus } = data;
+
+      if (presenceService) {
+        await presenceService.updateCustomStatus(socket.userId, socket.id, customStatus);
+
+        this.io.emit('presence:custom-status', {
+          userId: socket.userId,
+          customStatus,
+          timestamp: new Date()
+        });
+
+        if (callback) callback({ success: true });
+      } else {
+        if (callback) callback({ success: false, error: 'Presence service not available' });
+      }
+    } catch (error) {
+      logError('Error updating custom status', { error: error.message });
+      if (callback) callback({ success: false, error: error.message });
+    }
   }
 
   handleJoinRoom(socket, room, callback) {
@@ -527,6 +923,16 @@ class WebSocketServer {
       this.metrics.totalDisconnections++;
       this.metrics.connectionTimes.push(connectedDuration);
 
+      if (presenceService) {
+        presenceService.setUserOffline(socket.userId, socket.id);
+      }
+
+      if (collaborationService) {
+        for (const room of clientInfo.rooms) {
+          collaborationService.handleDisconnection(socket.id, socket.userId, room);
+        }
+      }
+
       this.broadcastUserOnlineStatus(socket.userId, false);
 
       clientInfo.rooms.forEach(room => {
@@ -648,7 +1054,29 @@ class WebSocketServer {
       this.heartbeatInterval = null;
     }
     
+    if (this.stateMonitorInterval) {
+      clearInterval(this.stateMonitorInterval);
+      this.stateMonitorInterval = null;
+    }
+
+    if (roomManager) {
+      roomManager.stop();
+    }
+
+    if (presenceService) {
+      presenceService.stop();
+    }
+
+    if (collaborationService) {
+      collaborationService.stop();
+    }
+
+    if (messageStatusService) {
+      messageStatusService.stop();
+    }
+    
     this.clientHeartbeats.clear();
+    this.connectedClients.clear();
     this.io.close();
   }
 }

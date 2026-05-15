@@ -117,7 +117,7 @@ class ConnectionPoolMonitor extends EventEmitter {
 
   _collectPoolStats() {
     const stats = this.dbPoolManager.getPoolStats();
-    const timestamp = new Date().ISOString();
+    const timestamp = new Date().toISOString();
 
     return {
       timestamp,
@@ -134,7 +134,7 @@ class ConnectionPoolMonitor extends EventEmitter {
 
   _collectQueryStats() {
     const stats = this.dbPoolManager.getQueryStats();
-    const timestamp = new Date().ISOString();
+    const timestamp = new Date().toISOString();
 
     return {
       timestamp,
@@ -152,7 +152,7 @@ class ConnectionPoolMonitor extends EventEmitter {
 
   _collectSystemStats() {
     const os = require('os');
-    const timestamp = new Date().ISOString();
+    const timestamp = new Date().toISOString();
 
     return {
       timestamp,

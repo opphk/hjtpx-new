@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc RevokeAllSessions(RevokeSessionsRequest) returns (RevokeSessionsResponse);
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string role = 4;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+  string user_id = 2;
+}
+
+message RevokeSessionsRequest {
+  string user_id = 1;
+}
+
+message ValidateSessionRequest {
+  string token = 1;
+}
+
+message TokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string token_type = 3;
+  int32 expires_in = 4;
+}
+
+message AuthResponse {
+  bool success = 1;
+  User user = 2;
+  TokenResponse tokens = 3;
+  string error = 4;
+}
+
+message VerifyTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string email = 3;
+  string role = 4;
+  string error = 5;
+}
+
+message LogoutResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message RevokeSessionsResponse {
+  bool success = 1;
+  int32 revoked_count = 2;
+}
+
+message ValidateSessionResponse {
+  bool valid = 1;
+  User user = 2;
+  int32 active_sessions = 3;
+}

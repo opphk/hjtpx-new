@@ -63,6 +63,7 @@
   "author": "HJTPX Developer",
   "license": "MIT",
   "dependencies": {
+    "@elastic/elasticsearch": "^8.15.0",
     "@apollo/server": "^5.5.1",
     "@sentry/node": "^10.53.1",
     "@sentry/tracing": "^7.120.4",
