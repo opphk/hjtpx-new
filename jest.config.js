@@ -55,6 +55,46 @@ module.exports = {
       functions: 55,
       lines: 60,
       statements: 60
+    },
+    './src/services/': {
+      branches: 55,
+      functions: 60,
+      lines: 65,
+      statements: 65
+    }
+  },
+  coverageAlertThreshold: {
+    global: {
+      branches: 35,
+      functions: 40,
+      lines: 45,
+      statements: 45
+    }
+  },
+  coverageBranchRequirements: {
+    main: {
+      branches: 50,
+      functions: 55,
+      lines: 60,
+      statements: 60
+    },
+    develop: {
+      branches: 45,
+      functions: 50,
+      lines: 55,
+      statements: 55
+    },
+    feature: {
+      branches: 40,
+      functions: 45,
+      lines: 50,
+      statements: 50
+    },
+    hotfix: {
+      branches: 40,
+      functions: 45,
+      lines: 50,
+      statements: 50
     }
   },
   testPathIgnorePatterns: ['/node_modules/', '/frontend/node_modules/'],

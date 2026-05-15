@@ -219,7 +219,7 @@ class TrendReporter {
           const y = chartHeight - (v / 100) * (chartHeight - 20) - 10;
           return { x, y, v };
         });
-        const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`;
+        const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`);
         return { path: path.join(' '), points };
       };
 

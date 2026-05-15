@@ -148,6 +148,28 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Check coverage alerts
+        id: coverage-alerts
+        run: |
+          node scripts/coverage-alert.js || true
+          if [ -f coverage/coverage-alerts.json ]; then
+            CRITICAL=$(jq -r '.critical | length' coverage/coverage-alerts.json)
+            WARNING=$(jq -r '.warning | length' coverage/coverage-alerts.json)
+            echo "critical_alerts=$CRITICAL" >> $GITHUB_OUTPUT
+            echo "warning_alerts=$WARNING" >> $GITHUB_OUTPUT
+            echo "has_critical=$([ "$CRITICAL" -gt 0 ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check branch coverage requirements
+        id: branch-coverage
+        run: |
+          node scripts/branch-coverage-check.js || true
+          if [ -f coverage/branch-coverage-result.json ]; then
+            BRANCH_PASSED=$(jq -r '.passed' coverage/branch-coverage-result.json)
+            echo "branch_coverage_passed=$BRANCH_PASSED" >> $GITHUB_OUTPUT
+            echo "branch_name=$(jq -r '.branchName' coverage/branch-coverage-result.json)" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -174,16 +196,38 @@ jobs:
           retention-days: 14
 
       - name: Check coverage status
-        if: steps.coverage.outputs.threshold_passed == 'false' || steps.coverage.outputs.coverage_dropped == 'true'
         run: |
-          echo "❌ Coverage check failed"
+          echo "📊 Coverage Check Summary"
+          echo "========================"
+          
           if [ "${{ steps.coverage.outputs.threshold_passed }}" == "false" ]; then
-            echo "  - Coverage thresholds not met"
+            echo "❌ Coverage thresholds not met"
+          else
+            echo "✅ Coverage thresholds passed"
           fi
+          
           if [ "${{ steps.coverage.outputs.coverage_dropped }}" == "true" ]; then
-            echo "  - Coverage dropped significantly"
+            echo "❌ Coverage dropped significantly"
+          else
+            echo "✅ No significant coverage drop"
           fi
-          exit 1
+          
+          if [ "${{ steps.coverage-alerts.outputs.has_critical }}" == "true" ]; then
+            echo "🚨 Critical coverage alerts detected"
+            echo "  Critical alerts: ${{ steps.coverage-alerts.outputs.critical_alerts }}"
+            echo "  Warning alerts: ${{ steps.coverage-alerts.outputs.warning_alerts }}"
+          fi
+          
+          if [ "${{ steps.branch-coverage.outputs.branch_coverage_passed }}" == "false" ]; then
+            echo "❌ Branch coverage requirements not met for ${{ steps.branch-coverage.outputs.branch_name }}"
+          else
+            echo "✅ Branch coverage requirements passed for ${{ steps.branch-coverage.outputs.branch_name }}"
+          fi
+          
+          if [ "${{ steps.coverage.outputs.threshold_passed }}" == "false" ] || \
+             [ "${{ steps.coverage.outputs.coverage_dropped }}" == "true" ]; then
+            exit 1
+          fi
 
   security:
     name: Security Audit
@@ -336,17 +380,41 @@ jobs:
           name: coverage-report
           path: coverage/
 
-      - name: Read coverage report
-        id: read-report
+      - name: Read coverage reports
+        id: read-reports
         run: |
+          COVERAGE_REPORT=""
+          ALERT_REPORT=""
+          BRANCH_REPORT=""
+          TREND_REPORT=""
+          
           if [ -f coverage/coverage-report.md ]; then
-            REPORT=$(cat coverage/coverage-report.md)
-            echo "report<<EOF" >> $GITHUB_OUTPUT
-            echo "$REPORT" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "report=No coverage report available" >> $GITHUB_OUTPUT
+            COVERAGE_REPORT=$(cat coverage/coverage-report.md)
           fi
+          
+          if [ -f coverage/coverage-alert.md ]; then
+            ALERT_REPORT=$(cat coverage/coverage-alert.md)
+          fi
+          
+          if [ -f coverage/branch-coverage-check.md ]; then
+            BRANCH_REPORT=$(cat coverage/branch-coverage-check.md)
+          fi
+          
+          if [ -f coverage/trend-report.html ]; then
+            TREND_REPORT="[View Trend Report](https://htmlpreview.github.io/?$(echo $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/runs/$GITHUB_RUN_ID/artifacts)##)"
+          fi
+          
+          FULL_REPORT="${COVERAGE_REPORT}"
+          if [ -n "$ALERT_REPORT" ]; then
+            FULL_REPORT="${FULL_REPORT}"$'\n\n'"${ALERT_REPORT}"
+          fi
+          if [ -n "$BRANCH_REPORT" ]; then
+            FULL_REPORT="${FULL_REPORT}"$'\n\n'"${BRANCH_REPORT}"
+          fi
+          
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          echo "$FULL_REPORT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Find existing coverage comment
         uses: peter-evans/find-comment@v3
@@ -361,7 +429,7 @@ jobs:
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.read-report.outputs.report }}
+          body: ${{ steps.read-reports.outputs.report }}
           edit-mode: replace
 
   quality-gate:
