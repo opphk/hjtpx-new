@@ -1,5 +1,8 @@
-require 'simplecov'
-SimpleCov.start
+require_relative 'coverage_formatter'
+
+require 'webmock/rspec'
+WebMock.enable!
+WebMock.disable_net_connect!(allow_localhost: true)
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
@@ -17,4 +20,8 @@ RSpec.configure do |config|
   config.warnings = true
   config.order = :random
   Kernel.srand config.seed
+
+  config.after(:suite) do
+    WebMock.disable_net_connect!
+  end
 end

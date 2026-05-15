@@ -1,0 +1,17 @@
+{
+  "app": {
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default"
+      }
+    ]
+  },
+  "library": {
+    "products": [
+      {
+        "name": "default"
+      }
+    ]
+  }
+}

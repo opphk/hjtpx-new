@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="demo-title">滑块验证</view>
+  <view class="demo-desc">拖动滑块完成拼图验证，安全可靠</view>
+
+  <view class="demo-card">
+    <view class="demo-header">
+      <text class="demo-type">Slider Captcha</text>
+      <text class="demo-badge">滑块</text>
+    </view>
+
+    <captcha
+      id="captcha"
+      appId="{{appId}}"
+      type="slider"
+      bind:onVerify="onVerify"
+      bind:onClose="onCaptchaClose"
+      bind:onError="onCaptchaError"
+    />
+
+    <button class="demo-btn" bindtap="showCaptcha">
+      唤起滑块验证
+    </button>
+
+    <view wx:if="{{verifyResult}}" class="demo-result result-{{resultType}}">
+      <text>{{verifyResult}}</text>
+    </view>
+  </view>
+</view>

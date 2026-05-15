@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="CaptchaX_Captcha::captchax"
+             title="CaptchaX"
+             module="CaptchaX_Captcha"
+             sortOrder="50"
+             resource="CaptchaX_Captcha::captchax"/>
+        <add id="CaptchaX_Captcha::captchax_config"
+             title="Configuration"
+             module="CaptchaX_Captcha"
+             sortOrder="10"
+             parent="CaptchaX_Captcha::captchax"
+             action="adminhtml/system_config/edit/section/captchax"
+             resource="CaptchaX_Captcha::config"/>
+        <add id="CaptchaX_Captcha::captchax_dashboard"
+             title="Dashboard"
+             module="CaptchaX_Captcha"
+             sortOrder="20"
+             parent="CaptchaX_Captcha::captchax"
+             action="captchax/index/index"
+             resource="CaptchaX_Captcha::dashboard"/>
+    </menu>
+</config>

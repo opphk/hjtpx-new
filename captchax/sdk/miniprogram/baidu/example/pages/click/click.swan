@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="demo-title">点选验证</view>
+  <view class="demo-desc">根据提示依次点击图片中的目标位置</view>
+
+  <view class="demo-card">
+    <view class="demo-header">
+      <text class="demo-type">Click Captcha</text>
+      <text class="demo-badge">点选</text>
+    </view>
+
+    <captcha
+      id="captcha"
+      appId="{{appId}}"
+      type="click"
+      bind:onVerify="onVerify"
+      bind:onClose="onCaptchaClose"
+      bind:onError="onCaptchaError"
+    />
+
+    <button class="demo-btn" bindtap="showCaptcha">
+      唤起点选验证
+    </button>
+
+    <view wx:if="{{verifyResult}}" class="demo-result result-{{resultType}}">
+      <text>{{verifyResult}}</text>
+    </view>
+  </view>
+</view>

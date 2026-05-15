@@ -1,0 +1,24 @@
+<view class="click-captcha">
+  <view class="click-area">
+    <image
+      src="{{backgroundImage}}"
+      class="click-bg"
+      mode="aspectFit"
+      onClick="onImageClick"
+    />
+
+    <view a:for="{{points}}" a:for-item="point" key="index" class="click-point">
+      <view class="point-marker">
+        <text>{{index + 1}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="click-hint">
+    <text>请依次点击图中{{maxClicks}}个目标位置 ({{clickCount}}/{{maxClicks}})</text>
+  </view>
+
+  <view class="click-actions">
+    <button size="mini" onTap="resetClicks">重置</button>
+  </view>
+</view>

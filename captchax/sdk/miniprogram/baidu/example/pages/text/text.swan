@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="demo-title">文字验证</view>
+  <view class="demo-desc">识别并输入图片中显示的文字</view>
+
+  <view class="demo-card">
+    <view class="demo-header">
+      <text class="demo-type">Text Captcha</text>
+      <text class="demo-badge">文字</text>
+    </view>
+
+    <captcha
+      id="captcha"
+      appId="{{appId}}"
+      type="text"
+      bind:onVerify="onVerify"
+      bind:onClose="onCaptchaClose"
+      bind:onError="onCaptchaError"
+    />
+
+    <button class="demo-btn" bindtap="showCaptcha">
+      唤起文字验证
+    </button>
+
+    <view wx:if="{{verifyResult}}" class="demo-result result-{{resultType}}">
+      <text>{{verifyResult}}</text>
+    </view>
+  </view>
+</view>

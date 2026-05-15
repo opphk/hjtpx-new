@@ -1,0 +1,41 @@
+<?php
+/**
+ * @var \CaptchaX\Captcha\Block\Captcha $block
+ */
+$config = $block->getWidgetConfig();
+?>
+<?php if ($block->isEnabled()): ?>
+<div class="captchax-wrapper" data-bind="scope: 'captchax'">
+    <div id="captchax-container" 
+         class="captchax-widget"
+         data-site-key="<?= $escaper->escapeHtml($config['siteKey']) ?>"
+         data-api-url="<?= $escaper->escapeHtml($config['apiUrl']) ?>"
+         data-captcha-type="<?= $escaper->escapeHtml($config['defaultType']) ?>"
+         data-enabled-types="<?= $escaper->escapeHtml(json_encode($config['enabledTypes'])) ?>">
+    </div>
+    <input type="hidden" 
+           name="captcha_token" 
+           id="captcha_token" 
+           value="" 
+           data-validate="{'required': true, 'captcha-verification': true}" />
+</div>
+
+<script type="text/x-magento-template">
+    <div class="captchax-loading">
+        <div class="loader"></div>
+        <span data-bind="i18n: 'Loading captcha...'"><?= $escaper->escapeHtml(__('Loading captcha...')) ?></span>
+    </div>
+</script>
+
+<script>
+    require([
+        'jquery',
+        'CaptchaX_Captcha/js/captchax'
+    ], function ($, CaptchaX) {
+        'use strict';
+        
+        var config = <?= json_encode($config) ?>;
+        CaptchaX.init(config);
+    });
+</script>
+<?php endif; ?>

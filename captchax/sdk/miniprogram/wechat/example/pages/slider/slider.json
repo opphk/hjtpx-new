@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "slider-captcha": "/slider-captcha/slider-captcha"
+  },
+  "navigationBarTitleText": "滑块验证码"
+}

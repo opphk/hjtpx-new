@@ -1,11 +1,5 @@
-import { defineNuxtModule, addPlugin, addComponent } from '@nuxt/kit';
-
-export interface CaptchaModuleOptions {
-  apiKey?: string;
-  apiSecret?: string;
-  serverUrl?: string;
-  enabled?: boolean;
-}
+import { defineNuxtModule, addPlugin, addComponent, addTemplate, createResolver } from '@nuxt/kit';
+import type { CaptchaModuleOptions } from './types';
 
 export default defineNuxtModule<CaptchaModuleOptions>({
   name: 'captchax',
@@ -14,11 +8,18 @@ export default defineNuxtModule<CaptchaModuleOptions>({
   defaults: {
     apiKey: '',
     apiSecret: '',
-    serverUrl: 'https://api.captchax.com',
-    enabled: true
+    serverUrl: 'https://captchax.example.com',
+    timeout: 30000,
+    retryAttempts: 3,
+    retryDelay: 1000,
+    enabled: true,
+    componentPrefix: 'Captcha',
+    autoMount: true
   },
   
   setup(options, nuxt) {
+    const resolver = createResolver(import.meta.url);
+    
     if (!options.enabled) {
       return;
     }
@@ -26,44 +27,49 @@ export default defineNuxtModule<CaptchaModuleOptions>({
     nuxt.options.runtimeConfig.captcha = {
       apiKey: options.apiKey,
       apiSecret: options.apiSecret,
-      serverUrl: options.serverUrl
+      serverUrl: options.serverUrl,
+      timeout: options.timeout,
+      retryAttempts: options.retryAttempts,
+      retryDelay: options.retryDelay
     };
     
-    addPlugin({
-      src: './plugin.ts',
-      fileName: 'captchax/plugin.ts'
-    });
+    if (options.autoMount !== false) {
+      addPlugin({
+        src: resolver.resolve('./runtime/plugin.ts'),
+        fileName: 'captchax/plugin.ts'
+      });
+    }
     
-    addComponent({
-      name: 'CaptchaButton',
-      filePath: './runtime/components/CaptchaButton.vue'
-    });
+    const componentNames = [
+      'CaptchaButton',
+      'CaptchaDialog',
+      'CaptchaSlider',
+      'CaptchaClick',
+      'CaptchaPuzzle',
+      'CaptchaRotate',
+      'CaptchaText',
+      'CaptchaIcon'
+    ];
     
-    addComponent({
-      name: 'CaptchaDialog',
-      filePath: './runtime/components/CaptchaDialog.vue'
-    });
-    
-    addComponent({
-      name: 'CaptchaSlider',
-      filePath: './runtime/components/CaptchaSlider.vue'
+    componentNames.forEach((name) => {
+      const fileName = name.replace('Captcha', '');
+      addComponent({
+        name,
+        filePath: resolver.resolve(`./runtime/components/${fileName}.vue`),
+        prefix: options.componentPrefix
+      });
     });
     
     nuxt.hook('components:dirs', (dirs) => {
       dirs.push({
-        path: './runtime/components',
-        prefix: 'Captcha'
+        path: resolver.resolve('./runtime/components'),
+        prefix: options.componentPrefix
       });
+    });
+    
+    addTemplate({
+      filename: 'captcha.config.mjs',
+      getContents: () => `export const captchaConfig = ${JSON.stringify(options)}`
     });
   }
 });
-
-declare module '@nuxt/schema' {
-  interface NuxtConfig {
-    captcha?: CaptchaModuleOptions;
-  }
-  
-  interface RuntimeConfig {
-    captcha: CaptchaModuleOptions;
-  }
-}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaptchaX - Shopify 验证码插件</title>
+    <script src="https://cdn.shopify.com/storefront-api/storefront-globalize.min.js"></script>
+    <link rel="stylesheet" href="styles/captcha.css">
+</head>
+<body>
+    <div id="captcha-root">
+        <div class="captcha-landing">
+            <div class="captcha-header">
+                <h1>CaptchaX</h1>
+                <p class="captcha-tagline">智能验证码解决方案</p>
+            </div>
+
+            <div class="captcha-features">
+                <div class="feature-card">
+                    <h3>多类型验证码</h3>
+                    <p>支持图像、滑块、九宫格等多种验证码类型</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>安全可靠</h3>
+                    <p>先进的人机验证技术，有效防止恶意攻击</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>无缝集成</h3>
+                    <p>专为 Shopify 打造的原生集成方案</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>数据分析</h3>
+                    <p>实时统计验证码使用情况</p>
+                </div>
+            </div>
+
+            <div class="captcha-integration">
+                <h2>快速集成</h2>
+                <div class="integration-code">
+                    <pre><code>
+&lt;script src="https://captchax.example.com/sdk/shopify.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+CaptchaX.init({
+    shop: 'your-store.myshopify.com',
+    apiKey: 'your-api-key',
+    types: ['login', 'register', 'contact']
+});
+&lt;/script&gt;
+                    </code></pre>
+                </div>
+
+                <div class="captcha-supported-pages">
+                    <h3>支持的页面</h3>
+                    <ul>
+                        <li>✓ 登录页面 (customer/login)</li>
+                        <li>✓ 注册页面 (account/register)</li>
+                        <li>✓ 联系表单 (pages/contact)</li>
+                        <li>✓ 评论表单 (blogs/*)</li>
+                        <li>✓ 密码重置 (account/recover)</li>
+                        <li>✓ 结账页面 (checkout)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="captcha-demo">
+                <h2>演示</h2>
+                <div class="demo-container" id="demo-widget">
+                    <div class="demo-placeholder">
+                        <p>点击下方按钮体验验证码</p>
+                        <button id="demo-image-btn" class="demo-btn">图像验证码</button>
+                        <button id="demo-slider-btn" class="demo-btn">滑块验证码</button>
+                        <button id="demo-grid-btn" class="demo-btn">网格验证码</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="captcha-footer">
+                <p>&copy; 2024 CaptchaX. All rights reserved.</p>
+                <div class="captcha-links">
+                    <a href="/admin">管理后台</a>
+                    <a href="/docs">文档</a>
+                    <a href="/support">支持</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/landing.js"></script>
+</body>
+</html>

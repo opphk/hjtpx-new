@@ -1,0 +1,27 @@
+<view class="rotate-captcha">
+  <view class="rotate-area">
+    <view class="rotate-center">
+      <image src="{{backgroundImage}}" class="rotate-bg" mode="aspectFit" />
+      <view
+        class="rotate-piece {{rotating ? 'rotating' : ''}}"
+        style="transform: rotate({{currentAngle}}deg);"
+        bindtouchstart="onRotateStart"
+        bindtouchmove="onRotateMove"
+        bindtouchend="onRotateEnd"
+      >
+        <image src="{{rotatedImage}}" class="rotate-img" mode="aspectFit" />
+        <view wx:if="{{success}}" class="rotate-success">
+          <text>✓</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="rotate-hint">
+    <text>旋转图片使对齐</text>
+  </view>
+
+  <view class="rotate-controls">
+    <button size="mini" bindtap="resetRotate">重置</button>
+  </view>
+</view>

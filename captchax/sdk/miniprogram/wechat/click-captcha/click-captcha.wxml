@@ -1,0 +1,38 @@
+<view class="click-captcha-container">
+  <view class="instruction">{{instruction}}</view>
+  
+  <view class="captcha-image-wrapper">
+    <image
+      class="captcha-background"
+      src="{{localBackgroundImage || backgroundImage}}"
+      mode="aspectFill"
+      bindtap="onImageTap"
+      data-image-info="{{imageSize}}"
+    />
+    
+    <block wx:for="{{clickPoints}}" wx:key="index">
+      <view 
+        class="click-point" 
+        style="left: {{item.x}}px; top: {{item.y}}px;"
+      >
+        <text class="point-number">{{index + 1}}</text>
+      </view>
+    </block>
+  </view>
+
+  <view class="click-info">
+    <text>已点击: {{selectedPoints.length}} / {{targetCount}}</text>
+  </view>
+
+  <view class="click-actions">
+    <button 
+      class="action-btn undo-btn" 
+      bindtap="undo"
+      disabled="{{selectedPoints.length === 0}}"
+    >撤销</button>
+    <button 
+      class="action-btn reset-btn" 
+      bindtap="reset"
+    >重置</button>
+  </view>
+</view>

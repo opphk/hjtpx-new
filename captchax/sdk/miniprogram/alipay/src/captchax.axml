@@ -1,0 +1,45 @@
+<view class="captcha-container">
+  <view a:if="{{visible}}" class="captcha-overlay">
+    <view class="captcha-modal">
+      <view class="captcha-header">
+        <text class="captcha-title">安全验证</text>
+        <view class="captcha-close" onTap="hide">
+          <text>×</text>
+        </view>
+      </view>
+
+      <view class="captcha-body">
+        <view a:if="{{loading}}" class="captcha-loading">
+          <text>加载中...</text>
+        </view>
+
+        <view a:elif="{{error}}" class="captcha-error">
+          <text>{{error}}</text>
+          <view class="error-actions">
+            <button size="mini" onTap="handleRefresh">重新加载</button>
+          </view>
+        </view>
+
+        <view a:elif="{{success}}" class="captcha-success">
+          <text>{{tipText}}</text>
+        </view>
+
+        <view a:else class="captcha-content">
+          <view class="captcha-images">
+            <image src="{{backgroundImage}}" class="captcha-bg" mode="aspectFit" />
+            <slot name="captcha"></slot>
+          </view>
+
+          <view class="captcha-tip">
+            <text>{{tipText}}</text>
+          </view>
+
+          <view class="captcha-actions">
+            <button size="mini" onTap="handleRefresh">刷新</button>
+            <button size="mini" type="primary" onTap="hide">关闭</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

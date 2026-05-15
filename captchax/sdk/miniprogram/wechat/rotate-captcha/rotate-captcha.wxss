@@ -1,0 +1,95 @@
+.rotate-captcha-container {
+  width: 100%;
+  padding: 20rpx;
+  box-sizing: border-box;
+  background-color: #fff;
+  border-radius: 12rpx;
+}
+
+.instruction {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.rotate-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.rotate-image-wrapper {
+  position: relative;
+  width: 300rpx;
+  height: 300rpx;
+  background: #f5f5f5;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.rotate-image {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.05s linear;
+}
+
+.angle-indicator {
+  position: absolute;
+  bottom: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+.target-indicator {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.rotate-actions {
+  display: flex;
+  justify-content: center;
+  gap: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.adjust-btn {
+  padding: 16rpx 30rpx;
+  font-size: 26rpx;
+  border: none;
+  border-radius: 8rpx;
+}
+
+.adjust-btn.left {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.adjust-btn.right {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.reset-action {
+  display: flex;
+  justify-content: center;
+}
+
+.refresh-btn {
+  padding: 16rpx 40rpx;
+  font-size: 26rpx;
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 8rpx;
+}

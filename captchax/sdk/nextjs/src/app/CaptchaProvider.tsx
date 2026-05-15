@@ -1,30 +1,19 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-
-interface CaptchaContextValue {
-  verify: (scene?: string) => Promise<string>;
-  getChallenge: (scene?: string) => Promise<unknown>;
-  config: {
-    apiKey: string;
-    serverUrl: string;
-  };
-}
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import type { CaptchaContextValue, CaptchaChallenge, CaptchaResult, CaptchaProviderProps } from '../types';
 
 const CaptchaContext = createContext<CaptchaContextValue | null>(null);
-
-interface CaptchaProviderProps {
-  children: ReactNode;
-  apiKey: string;
-  serverUrl?: string;
-}
 
 export function CaptchaProvider({ 
   children, 
   apiKey,
-  serverUrl = 'https://api.captchax.com'
+  serverUrl = 'https://api.captchax.com',
+  locale = 'zh-CN',
+  theme = 'auto',
+  onError
 }: CaptchaProviderProps) {
-  const [tokenCache, setTokenCache] = useState<Map<string, string>>(new Map());
+  const [tokenCache] = useState<Map<string, string>>(new Map());
 
   const verify = useCallback(async (scene: string = 'default'): Promise<string> => {
     try {
@@ -45,18 +34,23 @@ export function CaptchaProvider({
       }
       
       const token = data.token;
-      setTokenCache(prev => new Map(prev).set(scene, token));
+      tokenCache.set(scene, token);
       return token;
     } catch (error) {
-      throw error instanceof Error ? error : new Error('Verification failed');
+      const err = error instanceof Error ? error : new Error('Verification failed');
+      onError?.(err);
+      throw err;
     }
-  }, [apiKey, serverUrl]);
+  }, [apiKey, serverUrl, onError, tokenCache]);
 
-  const getChallenge = useCallback(async (scene: string = 'default'): Promise<unknown> => {
+  const getChallenge = useCallback(async (scene: string = 'default'): Promise<CaptchaChallenge> => {
     try {
       const response = await fetch(`${serverUrl}/api/v1/captcha/challenge`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept-Language': locale
+        },
         body: JSON.stringify({ 
           scene,
           apiKey,
@@ -64,14 +58,43 @@ export function CaptchaProvider({
         })
       });
       
-      return await response.json();
+      const data = await response.json();
+      return data as CaptchaChallenge;
     } catch (error) {
-      throw error instanceof Error ? error : new Error('Failed to get challenge');
+      const err = error instanceof Error ? error : new Error('Failed to get challenge');
+      onError?.(err);
+      throw err;
     }
-  }, [apiKey, serverUrl]);
+  }, [apiKey, serverUrl, locale, onError]);
+
+  const verifyToken = useCallback(async (token: string): Promise<CaptchaResult> => {
+    try {
+      const response = await fetch(`${serverUrl}/api/v2/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      
+      const data = await response.json();
+      return data as CaptchaResult;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to verify token');
+      onError?.(err);
+      return {
+        success: false,
+        error: err.message
+      };
+    }
+  }, [serverUrl, onError]);
+
+  useEffect(() => {
+    if (theme !== 'auto') {
+      document.documentElement.setAttribute('data-captcha-theme', theme);
+    }
+  }, [theme]);
 
   return (
-    <CaptchaContext.Provider value={{ verify, getChallenge, config: { apiKey, serverUrl } }}>
+    <CaptchaContext.Provider value={{ verify, getChallenge, verifyToken, config: { apiKey, serverUrl } }}>
       {children}
     </CaptchaContext.Provider>
   );
@@ -86,4 +109,4 @@ export function useCaptchaContext(): CaptchaContextValue {
 }
 
 export { CaptchaContext };
-export type { CaptchaProviderProps };
+

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="controller_action_predispatch_customer_account_loginPost">
+        <observer name="captchax_customer_login" 
+                   instance="CaptchaX\Captcha\Observer\CustomerLogin" 
+                   shared="false" />
+    </event>
+    <event name="controller_action_predispatch_customer_account_createpost">
+        <observer name="captchax_customer_register" 
+                   instance="CaptchaX\Captcha\Observer\CustomerRegister" 
+                   shared="false" />
+    </event>
+    <event name="controller_action_predispatch_contact_index_post">
+        <observer name="captchax_contact_form" 
+                   instance="CaptchaX\Captcha\Observer\ContactForm" 
+                   shared="false" />
+    </event>
+    <event name="controller_action_predispatch_review_product_post">
+        <observer name="captchax_product_review" 
+                   instance="CaptchaX\Captcha\Observer\ProductReview" 
+                   shared="false" />
+    </event>
+</config>

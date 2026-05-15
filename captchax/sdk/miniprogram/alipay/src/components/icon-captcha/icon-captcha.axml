@@ -1,0 +1,32 @@
+<view class="icon-captcha">
+  <view class="icon-hint">
+    <text>请选择包含"{{targetIcon}}"的图标</text>
+  </view>
+
+  <view class="icon-grid">
+    <view
+      a:for="{{iconImages}}"
+      a:for-item="icon"
+      key="index"
+      class="icon-item {{selectedIcons.includes(icon.id) ? 'selected' : ''}}"
+      onTap="onIconClick"
+      data-id="{{icon.id}}"
+    >
+      <image src="{{icon.url}}" class="icon-img" mode="aspectFit" />
+      <view a:if="{{selectedIcons.includes(icon.id)}}" class="icon-check">
+        <text>✓</text>
+      </view>
+    </view>
+  </view>
+
+  <text a:if="{{error}}" class="icon-error">{{error}}</text>
+
+  <view class="icon-actions">
+    <button size="mini" onTap="onRefresh">刷新</button>
+    <button size="mini" type="primary" onTap="onSubmit">提交</button>
+  </view>
+
+  <view a:if="{{success}}" class="icon-success">
+    <text>验证成功</text>
+  </view>
+</view>

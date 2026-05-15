@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "rotate-captcha": "/rotate-captcha/rotate-captcha"
+  },
+  "navigationBarTitleText": "旋转验证码"
+}

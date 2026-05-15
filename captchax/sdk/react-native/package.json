@@ -1,0 +1,47 @@
+{
+  "name": "captchax-react-native-sdk",
+  "version": "1.0.0",
+  "description": "CaptchaX React Native SDK - 多类型验证码解决方案",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint ./src --ext .ts,.tsx",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react-native",
+    "captcha",
+    "verification",
+    "slider-captcha",
+    "click-captcha",
+    "puzzle-captcha",
+    "rotate-captcha"
+  ],
+  "author": "CaptchaX Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.60.0"
+  },
+  "devDependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-native": "^0.67.0",
+    "typescript": "^4.5.0",
+    "react": "^17.0.2",
+    "react-native": "^0.67.0",
+    "@react-native-community/eslint-config": "^2.0.0",
+    "eslint": "^7.32.0",
+    "jest": "^27.4.0",
+    "@types/jest": "^27.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/captchax/react-native-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/captchax/react-native-sdk/issues"
+  },
+  "homepage": "https://captchax.example.com"
+}

@@ -1,0 +1,149 @@
+.icon-captcha-container {
+  width: 100%;
+  padding: 20rpx;
+  box-sizing: border-box;
+  background-color: #fff;
+  border-radius: 12rpx;
+}
+
+.instruction {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.image-section {
+  margin-bottom: 30rpx;
+}
+
+.captcha-image {
+  width: 100%;
+  height: 300rpx;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+}
+
+.icons-section {
+  margin-bottom: 30rpx;
+}
+
+.icons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+}
+
+.icon-item {
+  position: relative;
+  aspect-ratio: 1;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-item:active {
+  transform: scale(0.95);
+}
+
+.icon-item.selected {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.icon-item.correct {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.icon-item.wrong {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.icon-item.target {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.icon-image {
+  width: 80%;
+  height: 80%;
+}
+
+.icon-result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60rpx;
+  height: 60rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.icon-item.correct .icon-result {
+  background: #4caf50;
+  color: #fff;
+}
+
+.icon-item.wrong .icon-result {
+  background: #f44336;
+  color: #fff;
+}
+
+.target-mark {
+  position: absolute;
+  bottom: 5rpx;
+  right: 5rpx;
+  background: #ff9800;
+  color: #fff;
+  font-size: 18rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 4rpx;
+}
+
+.action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 24rpx;
+  font-size: 30rpx;
+  background: #ddd;
+  color: #fff;
+  border: none;
+  border-radius: 8rpx;
+}
+
+.submit-btn.active {
+  background: #4a90e2;
+}
+
+.submit-btn[disabled] {
+  opacity: 0.6;
+}
+
+.refresh-btn {
+  width: 100%;
+  padding: 20rpx;
+  font-size: 28rpx;
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 8rpx;
+}

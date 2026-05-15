@@ -1,0 +1,26 @@
+<view class="text-captcha">
+  <view class="text-image">
+    <image src="{{textImage}}" class="text-img" mode="aspectFit" />
+  </view>
+
+  <view class="text-input-area">
+    <input
+      class="text-input"
+      type="text"
+      placeholder="请输入上方文字"
+      value="{{inputValue}}"
+      onInput="onInput"
+      maxlength="10"
+    />
+    <text a:if="{{error}}" class="text-error">{{error}}</text>
+  </view>
+
+  <view class="text-actions">
+    <button size="mini" onTap="onRefresh">刷新</button>
+    <button size="mini" type="primary" onTap="onSubmit">提交</button>
+  </view>
+
+  <view a:if="{{success}}" class="text-success">
+    <text>验证成功</text>
+  </view>
+</view>

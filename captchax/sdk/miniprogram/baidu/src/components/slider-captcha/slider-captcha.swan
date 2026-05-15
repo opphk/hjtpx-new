@@ -1,0 +1,21 @@
+<view class="slider-captcha">
+  <view class="captcha-track" bindtap="handleTrackClick">
+    <image src="{{backgroundImage}}" class="track-bg" mode="aspectFit" />
+    <view
+      class="slider-block {{sliding ? 'sliding' : ''}}"
+      style="left: {{sliderLeft}}px;"
+      bindtouchstart="onSliderStart"
+      bindtouchmove="onSliderMove"
+      bindtouchend="onSliderEnd"
+    >
+      <image src="{{sliderImage}}" class="slider-img" mode="aspectFit" />
+      <view wx:if="{{success}}" class="slider-success">
+        <text>✓</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="slider-hint">
+    <text>拖动滑块完成拼图验证</text>
+  </view>
+</view>

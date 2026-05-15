@@ -1,0 +1,11 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/SliderDemo",
+    "pages/ClickDemo",
+    "pages/PuzzleDemo",
+    "pages/RotateDemo",
+    "pages/TextDemo",
+    "pages/IconDemo"
+  ]
+}

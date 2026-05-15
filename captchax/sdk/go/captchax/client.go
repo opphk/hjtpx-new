@@ -10,7 +10,7 @@ import (
 
 type Client struct {
 	config     *Config
-	httpClient *HTTPClient
+	httpClient *httpClient
 	mu         sync.RWMutex
 }
 
@@ -21,11 +21,11 @@ func NewClient(config *Config) (*Client, error) {
 
 	client := &Client{
 		config:     config,
-		httpClient: NewHTTPClient(config.BaseURL, config.Timeout, config.RetryTimes),
+		httpClient: newHTTPClient(config.BaseURL, config.Timeout, config.RetryTimes),
 	}
 
 	if config.AppID != "" {
-		client.httpClient.SetHeader("X-App-ID", config.AppID)
+		client.httpClient.setHeader("X-App-ID", config.AppID)
 	}
 
 	return client, nil
@@ -39,7 +39,7 @@ func (c *Client) SetAppID(appID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.config.AppID = appID
-	c.httpClient.SetHeader("X-App-ID", appID)
+	c.httpClient.setHeader("X-App-ID", appID)
 }
 
 func (c *Client) SetAPIVersion(version APIVersion) {
@@ -70,7 +70,7 @@ func (c *Client) requireAppID() error {
 }
 
 func (c *Client) HealthCheck(ctx context.Context) (*HealthStatus, error) {
-	body, err := c.httpClient.Get(ctx, "/health")
+	body, err := c.httpClient.get(ctx, "/health")
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (c *Client) GenerateSliderCaptcha(ctx context.Context, opts *SliderGenerate
 		body.ScenarioID = opts.ScenarioID
 	}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/slider", body, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/slider", body, "")
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (c *Client) VerifySliderCaptcha(ctx context.Context, captchaID string, targ
 		TargetY:   targetY,
 	}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/slider/verify", body, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/slider/verify", body, "")
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (c *Client) GenerateClickCaptcha(ctx context.Context, opts *ClickGenerateOp
 		body.ScenarioID = opts.ScenarioID
 	}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/click", body, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/click", body, "")
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (c *Client) VerifyClickCaptcha(ctx context.Context, captchaID string, click
 		Clicks:    clicks,
 	}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/click/verify", body, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/click/verify", body, "")
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +249,7 @@ func (c *Client) GeneratePuzzleCaptcha(ctx context.Context, opts *SliderGenerate
 		body.ScenarioID = opts.ScenarioID
 	}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/puzzle", body, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/puzzle", body, "")
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func (c *Client) VerifyPuzzleCaptcha(ctx context.Context, captchaID string, targ
 		TargetY:   targetY,
 	}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/puzzle/verify", body, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/puzzle/verify", body, "")
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (c *Client) BatchVerify(ctx context.Context, items []BatchVerifyItem, dedup
 
 	body := requestBody{Items: items}
 
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/batch/verify", body, deduplicationID)
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/batch/verify", body, deduplicationID)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (c *Client) BatchVerify(ctx context.Context, items []BatchVerifyItem, dedup
 }
 
 func (c *Client) ListScenarios(ctx context.Context) (*ScenarioListResponse, error) {
-	respBody, err := c.httpClient.Get(ctx, c.getAPIPrefix()+"/captcha/scenarios")
+	respBody, err := c.httpClient.get(ctx, c.getAPIPrefix()+"/captcha/scenarios")
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (c *Client) ListScenarios(ctx context.Context) (*ScenarioListResponse, erro
 }
 
 func (c *Client) CreateScenario(ctx context.Context, scenario *Scenario) (*Scenario, error) {
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/scenarios", scenario, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/scenarios", scenario, "")
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func (c *Client) CreateScenario(ctx context.Context, scenario *Scenario) (*Scena
 }
 
 func (c *Client) GetScenario(ctx context.Context, scenarioID string) (*Scenario, error) {
-	respBody, err := c.httpClient.Get(ctx, c.getAPIPrefix()+"/captcha/scenarios/"+scenarioID)
+	respBody, err := c.httpClient.get(ctx, c.getAPIPrefix()+"/captcha/scenarios/"+scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +351,7 @@ func (c *Client) GetScenario(ctx context.Context, scenarioID string) (*Scenario,
 }
 
 func (c *Client) UpdateScenario(ctx context.Context, scenarioID string, updates map[string]interface{}) (*Scenario, error) {
-	respBody, err := c.httpClient.Put(ctx, c.getAPIPrefix()+"/captcha/scenarios/"+scenarioID, updates)
+	respBody, err := c.httpClient.put(ctx, c.getAPIPrefix()+"/captcha/scenarios/"+scenarioID, updates)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func (c *Client) UpdateScenario(ctx context.Context, scenarioID string, updates 
 }
 
 func (c *Client) DeleteScenario(ctx context.Context, scenarioID string) (*DeleteResponse, error) {
-	respBody, err := c.httpClient.Delete(ctx, c.getAPIPrefix()+"/captcha/scenarios/"+scenarioID)
+	respBody, err := c.httpClient.delete(ctx, c.getAPIPrefix()+"/captcha/scenarios/"+scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +379,7 @@ func (c *Client) DeleteScenario(ctx context.Context, scenarioID string) (*Delete
 }
 
 func (c *Client) RegisterWebhook(ctx context.Context, webhook *Webhook) (*Webhook, error) {
-	respBody, err := c.httpClient.Post(ctx, c.getAPIPrefix()+"/captcha/webhook/register", webhook, "")
+	respBody, err := c.httpClient.post(ctx, c.getAPIPrefix()+"/captcha/webhook/register", webhook, "")
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (c *Client) ListWebhooks(ctx context.Context, appID string) (*WebhookListRe
 		endpoint += "?app_id=" + appID
 	}
 
-	respBody, err := c.httpClient.Get(ctx, endpoint)
+	respBody, err := c.httpClient.get(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +412,7 @@ func (c *Client) ListWebhooks(ctx context.Context, appID string) (*WebhookListRe
 }
 
 func (c *Client) UpdateWebhook(ctx context.Context, webhookID string, updates map[string]interface{}) (*Webhook, error) {
-	respBody, err := c.httpClient.Put(ctx, c.getAPIPrefix()+"/captcha/webhook/"+webhookID, updates)
+	respBody, err := c.httpClient.put(ctx, c.getAPIPrefix()+"/captcha/webhook/"+webhookID, updates)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +426,7 @@ func (c *Client) UpdateWebhook(ctx context.Context, webhookID string, updates ma
 }
 
 func (c *Client) UnregisterWebhook(ctx context.Context, webhookID string) (*DeleteResponse, error) {
-	respBody, err := c.httpClient.Delete(ctx, c.getAPIPrefix()+"/captcha/webhook/"+webhookID)
+	respBody, err := c.httpClient.delete(ctx, c.getAPIPrefix()+"/captcha/webhook/"+webhookID)
 	if err != nil {
 		return nil, err
 	}

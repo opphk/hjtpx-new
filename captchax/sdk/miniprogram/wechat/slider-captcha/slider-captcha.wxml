@@ -1,0 +1,36 @@
+<view class="slider-captcha-container">
+  <view class="captcha-image-wrapper">
+    <image 
+      class="captcha-background" 
+      src="{{localBackgroundImage || backgroundImage}}" 
+      mode="aspectFill"
+    />
+    <view 
+      class="slider-block"
+      style="left: {{sliderPosition}}px; width: {{sliderSize.width}}px; height: {{sliderSize.height}}px;"
+    >
+      <image 
+        class="slider-image" 
+        src="{{localSliderImage || sliderImage}}" 
+        mode="aspectFit"
+      />
+    </view>
+  </view>
+  
+  <view class="slider-track">
+    <view class="slider-hint">拖动滑块完成拼图</view>
+    <view 
+      class="slider-bar {{isDragging ? 'dragging' : ''}}"
+      bindtouchstart="onSliderTouchStart"
+      bindtouchmove="onSliderTouchMove"
+      bindtouchend="onSliderTouchEnd"
+    >
+      <view 
+        class="slider-thumb"
+        style="left: {{sliderPosition}}px;"
+      >
+        <view class="slider-icon">→</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "icon-captcha": "/icon-captcha/icon-captcha"
+  },
+  "navigationBarTitleText": "图标验证码"
+}

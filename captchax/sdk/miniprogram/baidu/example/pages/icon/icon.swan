@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="demo-title">图标验证</view>
+  <view class="demo-desc">从多个图标中选择符合描述的图标</view>
+
+  <view class="demo-card">
+    <view class="demo-header">
+      <text class="demo-type">Icon Captcha</text>
+      <text class="demo-badge">图标</text>
+    </view>
+
+    <captcha
+      id="captcha"
+      appId="{{appId}}"
+      type="icon"
+      bind:onVerify="onVerify"
+      bind:onClose="onCaptchaClose"
+      bind:onError="onCaptchaError"
+    />
+
+    <button class="demo-btn" bindtap="showCaptcha">
+      唤起图标验证
+    </button>
+
+    <view wx:if="{{verifyResult}}" class="demo-result result-{{resultType}}">
+      <text>{{verifyResult}}</text>
+    </view>
+  </view>
+</view>

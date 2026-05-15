@@ -1,0 +1,47 @@
+<view class="rotate-captcha-container">
+  <view class="instruction">拖动图片旋转至正确位置</view>
+  
+  <view class="rotate-area">
+    <view 
+      class="rotate-image-wrapper"
+      bindtouchstart="onRotateTouchStart"
+      bindtouchmove="onRotateTouchMove"
+      bindtouchend="onRotateTouchEnd"
+    >
+      <image 
+        class="rotate-image"
+        src="{{localImageUrl || imageUrl}}"
+        mode="aspectFit"
+        style="transform: rotate({{currentAngle}}deg)"
+      />
+      
+      <view class="angle-indicator">
+        <text>{{currentAngle}}°</text>
+      </view>
+    </view>
+    
+    <view class="target-indicator">
+      <text>目标角度: {{targetAngle}}°</text>
+    </view>
+  </view>
+  
+  <view class="rotate-actions">
+    <button 
+      class="adjust-btn left"
+      bindtap="adjustAngle"
+      data-direction="left"
+    >向左旋转</button>
+    <button 
+      class="adjust-btn right"
+      bindtap="adjustAngle"
+      data-direction="right"
+    >向右旋转</button>
+  </view>
+  
+  <view class="reset-action">
+    <button 
+      class="refresh-btn"
+      bindtap="reset"
+    >重置</button>
+  </view>
+</view>

@@ -4,15 +4,32 @@
          bootstrap="vendor/autoload.php"
          colors="true"
          verbose="true"
-         stopOnFailure="false">
+         stopOnFailure="false"
+         cacheResult="false">
     <testsuites>
         <testsuite name="Unit">
             <directory suffix="Test.php">./tests</directory>
         </testsuite>
+        <testsuite name="Integration">
+            <directory suffix="IntegrationTest.php">./tests</directory>
+        </testsuite>
     </testsuites>
-    <coverage>
+    <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">./src</directory>
         </include>
+        <report>
+            <html outputDirectory="build/coverage"/>
+            <text outputFile="php://stdout"/>
+            <clover outputFile="build/logs/clover.xml"/>
+            <cobertura outputFile="build/logs/cobertura.xml"/>
+        </report>
+        <report type="php">
+            <file outputFile="build/coverage/.tmp/coverage.php"/>
+        </report>
     </coverage>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="XDEBUG_MODE" value="coverage"/>
+    </php>
 </phpunit>

@@ -1,0 +1,11 @@
+{
+  "module": {
+    "name": "captchax_sdk_library",
+    "type": "har",
+    "deviceTypes": [
+      "phone",
+      "tablet"
+    ],
+    "deliveryWithInstall": true
+  }
+}

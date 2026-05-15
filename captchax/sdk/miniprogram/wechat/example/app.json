@@ -1,0 +1,19 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/slider/slider",
+    "pages/click/click",
+    "pages/puzzle/puzzle",
+    "pages/rotate/rotate",
+    "pages/text/text",
+    "pages/icon/icon"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "CaptchaX 示例",
+    "navigationBarTextStyle": "black"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "captchax-baidu-sdk",
+  "version": "1.0.0",
+  "description": "CaptchaX 百度小程序 SDK - 多类型验证码解决方案",
+  "main": "captchax.js",
+  "keywords": [
+    "captcha",
+    "verification",
+    "baidu",
+    "miniprogram",
+    "slider",
+    "click",
+    "puzzle"
+  ],
+  "author": "CaptchaX Team",
+  "license": "MIT"
+}

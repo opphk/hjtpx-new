@@ -6,6 +6,7 @@ export default defineNuxtPlugin(() => {
   return {
     provide: {
       captcha
-    }
+    },
+    ...captcha
   };
 });

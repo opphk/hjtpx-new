@@ -6,6 +6,7 @@ __license__ = 'MIT'
 
 from .client import CaptchaXClient, CaptchaXError
 from .types import (
+    ApiVersion,
     CaptchaConfig,
     SliderCaptchaResult,
     SliderVerifyResult,
@@ -16,14 +17,18 @@ from .types import (
     Scenario,
     Webhook,
     BatchVerifyItem,
+    BatchVerifyResult,
     BatchVerifyResponse,
+    BatchVerifySummary,
     HealthStatus,
     CharPosition,
+    CaptchaResponse,
 )
 
 __all__ = [
     'CaptchaXClient',
     'CaptchaXError',
+    'ApiVersion',
     'CaptchaConfig',
     'SliderCaptchaResult',
     'SliderVerifyResult',
@@ -34,7 +39,10 @@ __all__ = [
     'Scenario',
     'Webhook',
     'BatchVerifyItem',
+    'BatchVerifyResult',
     'BatchVerifyResponse',
+    'BatchVerifySummary',
     'HealthStatus',
     'CharPosition',
+    'CaptchaResponse',
 ]

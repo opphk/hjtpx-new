@@ -1,0 +1,52 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "CaptchaX SDK"
+    },
+    {
+      "name": "captcha_title",
+      "value": "Captcha"
+    },
+    {
+      "name": "slider_captcha",
+      "value": "Slider Captcha"
+    },
+    {
+      "name": "click_captcha",
+      "value": "Click Captcha"
+    },
+    {
+      "name": "puzzle_captcha",
+      "value": "Puzzle Captcha"
+    },
+    {
+      "name": "rotate_captcha",
+      "value": "Rotate Captcha"
+    },
+    {
+      "name": "text_captcha",
+      "value": "Text Captcha"
+    },
+    {
+      "name": "icon_captcha",
+      "value": "Icon Captcha"
+    },
+    {
+      "name": "verify_success",
+      "value": "Verification Successful"
+    },
+    {
+      "name": "verify_failed",
+      "value": "Verification Failed"
+    },
+    {
+      "name": "refresh",
+      "value": "Refresh"
+    },
+    {
+      "name": "loading",
+      "value": "Loading..."
+    }
+  ]
+}

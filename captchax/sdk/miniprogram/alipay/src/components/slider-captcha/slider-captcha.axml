@@ -1,0 +1,21 @@
+<view class="slider-captcha">
+  <view class="captcha-track" onTap="handleTrackClick">
+    <image src="{{backgroundImage}}" class="track-bg" mode="aspectFit" />
+    <view
+      class="slider-block"
+      style="left: {{sliderLeft}}px;"
+      onTouchStart="onSliderStart"
+      onTouchMove="onSliderMove"
+      onTouchEnd="onSliderEnd"
+    >
+      <image src="{{sliderImage}}" class="slider-img" mode="aspectFit" />
+      <view a:if="{{success}}" class="slider-success">
+        <text>✓</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="slider-hint">
+    <text>拖动滑块完成拼图验证</text>
+  </view>
+</view>

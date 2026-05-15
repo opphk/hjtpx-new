@@ -1,0 +1,26 @@
+{
+  "name": "CaptchaXExample",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "build": "react-native build"
+  },
+  "dependencies": {
+    "react": "17.0.2",
+    "react-native": "0.67.0",
+    "@react-navigation/native": "^6.0.0",
+    "@react-navigation/native-stack": "^6.0.0",
+    "react-native-screens": "^3.0.0",
+    "react-native-safe-area-context": "^3.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.9",
+    "@babel/runtime": "^7.12.5",
+    "@types/react": "^17.0.0",
+    "@types/react-native": "^0.67.0",
+    "typescript": "^4.5.0"
+  }
+}

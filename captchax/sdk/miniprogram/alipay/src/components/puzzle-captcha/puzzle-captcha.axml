@@ -1,0 +1,28 @@
+<view class="puzzle-captcha">
+  <view class="puzzle-track">
+    <view class="puzzle-slot">
+      <image src="{{slotImage}}" class="slot-img" mode="aspectFit" />
+    </view>
+
+    <view
+      class="puzzle-piece"
+      style="left: {{puzzleLeft}}px;"
+      onTouchStart="onSliderStart"
+      onTouchMove="onSliderMove"
+      onTouchEnd="onSliderEnd"
+    >
+      <image src="{{puzzleImage}}" class="puzzle-img" mode="aspectFit" />
+      <view a:if="{{success}}" class="puzzle-success">
+        <text>✓</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="puzzle-hint">
+    <text>拖动滑块将拼图放入正确位置</text>
+  </view>
+
+  <view class="puzzle-guide">
+    <view class="guide-line" style="left: {{targetX}}px;"></view>
+  </view>
+</view>

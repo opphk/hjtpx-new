@@ -2,27 +2,15 @@
 
 import { useState, useCallback } from 'react';
 import { useCaptchaContext } from '../app/CaptchaProvider';
-
-interface UseCaptchaOptions {
-  scene?: string;
-  onSuccess?: (token: string) => void;
-  onError?: (error: Error) => void;
-}
-
-interface UseCaptchaReturn {
-  token: string | null;
-  loading: boolean;
-  error: Error | null;
-  verify: () => Promise<string | null>;
-  reset: () => void;
-}
+import type { UseCaptchaOptions, UseCaptchaReturn } from '../types';
 
 export function useCaptcha(options: UseCaptchaOptions = {}): UseCaptchaReturn {
-  const { scene = 'default', onSuccess, onError } = options;
+  const { scene = 'default', onSuccess, onError, serverUrl, apiKey, autoVerify = false } = options;
   
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   let captchaContext;
   try {
@@ -36,10 +24,30 @@ export function useCaptcha(options: UseCaptchaOptions = {}): UseCaptchaReturn {
     setError(null);
     
     try {
-      const resultToken = await captchaContext?.verify(scene);
+      let resultToken: string | null = null;
+      
+      if (captchaContext) {
+        resultToken = await captchaContext.verify(scene);
+      } else if (serverUrl && apiKey) {
+        const response = await fetch(`${serverUrl}/api/v1/captcha/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            scene,
+            apiKey,
+            timestamp: Date.now()
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          resultToken = data.token;
+        }
+      }
       
       if (resultToken) {
         setToken(resultToken);
+        setIsVerified(true);
         onSuccess?.(resultToken);
         return resultToken;
       } else {
@@ -53,14 +61,15 @@ export function useCaptcha(options: UseCaptchaOptions = {}): UseCaptchaReturn {
     } finally {
       setLoading(false);
     }
-  }, [scene, onSuccess, onError, captchaContext]);
+  }, [scene, onSuccess, onError, captchaContext, serverUrl, apiKey]);
 
   const reset = useCallback(() => {
     setToken(null);
     setError(null);
+    setIsVerified(false);
   }, []);
 
-  return { token, loading, error, verify, reset };
+  return { token, loading, error, isVerified, verify, reset };
 }
 
 export default useCaptcha;

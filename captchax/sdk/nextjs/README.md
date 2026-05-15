@@ -1,38 +1,48 @@
-# CaptchaX Next.js Integration
+# CaptchaX Next.js Integration Package
 
-CaptchaX 的官方 Next.js App Router 集成包，提供 Server Components、Client Components 和中间件支持。
+Complete Next.js 15 integration for CaptchaX captcha verification service.
 
-## 特性
+## Features
 
-- ✅ **Server Components** - 服务端验证和数据获取
-- ✅ **Client Components** - 交互式验证码组件
-- ✅ **中间件支持** - 路由保护和 API 验证
-- ✅ **TypeScript** - 完整的类型定义
-- ✅ **多种验证码类型** - 滑块、点选、拼图、旋转、文字、图标
+- **Next.js 15 Support** - Full compatibility with Next.js 15 and React 19
+- **Server Components** - Server-side verification and data fetching
+- **Client Components** - Interactive captcha components
+- **Server Actions** - Form handling and verification with Server Actions
+- **Middleware Support** - Route protection and API verification
+- **TypeScript** - Complete type definitions
+- **Multiple Captcha Types** - Slider, click, puzzle, rotate, text, icon
+- **App Router** - Optimized App Router components
 
-## 安装
+## Installation
 
 ```bash
 npm install @captchax/nextjs
+# or
+yarn add @captchax/nextjs
+# or
+pnpm add @captchax/nextjs
 ```
 
-## 快速开始
+## Environment Setup
 
-### 1. 配置环境变量
-
-创建 `.env.local` 文件：
+Create `.env.local` file:
 
 ```bash
+# Client-side configuration
 NEXT_PUBLIC_CAPTCHA_API_KEY=your_api_key
-NEXT_PUBLIC_CAPTCHA_SERVER_URL=https://api.captchax.com
+NEXT_PUBLIC_CAPTCHA_SERVER_URL=http://localhost:3000
+
+# Server-side configuration
 CAPTCHA_API_KEY=your_api_key
 CAPTCHA_API_SECRET=your_api_secret
-CAPTCHA_SERVER_URL=https://api.captchax.com
+CAPTCHA_SERVER_URL=http://localhost:3000
 ```
 
-### 2. 添加 Provider
+## Quick Start
 
-在 `app/providers.tsx` 中：
+### 1. Add Provider
+
+Create `app/providers.tsx`:
 
 ```typescript
 'use client';
@@ -44,6 +54,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <CaptchaProvider 
       apiKey={process.env.NEXT_PUBLIC_CAPTCHA_API_KEY!}
       serverUrl={process.env.NEXT_PUBLIC_CAPTCHA_SERVER_URL}
+      theme="light"
+      locale="zh-CN"
     >
       {children}
     </CaptchaProvider>
@@ -51,16 +63,36 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### 3. 在页面中使用
+Update `app/layout.tsx`:
 
-#### 基础按钮验证
+```typescript
+import { Providers } from './providers';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="zh-CN">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+### 2. Use Captcha Components
+
+#### CaptchaButton - Basic Button Verification
 
 ```typescript
 'use client';
 
 import { CaptchaButton } from '@captchax/nextjs';
 
-export default function HomePage() {
+export default function LoginPage() {
   const handleSuccess = (token: string) => {
     console.log('Verified:', token);
   };
@@ -70,12 +102,317 @@ export default function HomePage() {
       scene="login"
       onSuccess={handleSuccess}
       text="点击验证"
+      size="large"
+      variant="primary"
     />
   );
 }
 ```
 
-#### 服务端验证
+#### CaptchaSlider - Slider Verification
+
+```typescript
+'use client';
+
+import { CaptchaSlider } from '@captchax/nextjs';
+import { useState } from 'react';
+
+export default function RegisterPage() {
+  const [token, setToken] = useState<string | null>(null);
+
+  const handleSuccess = (newToken: string) => {
+    setToken(newToken);
+  };
+
+  return (
+    <div>
+      <h1>注册</h1>
+      <CaptchaSlider
+        scene="register"
+        onSuccess={handleSuccess}
+        width={300}
+        height={150}
+        difficulty="medium"
+      />
+    </div>
+  );
+}
+```
+
+#### CaptchaClick - Click Verification
+
+```typescript
+'use client';
+
+import { CaptchaClick } from '@captchax/nextjs';
+
+export default function CommentPage() {
+  const handleSuccess = (token: string) => {
+    console.log('Click verified:', token);
+  };
+
+  return (
+    <CaptchaClick
+      scene="comment"
+      onSuccess={handleSuccess}
+      targetCount={4}
+    />
+  );
+}
+```
+
+#### CaptchaPuzzle - Puzzle Verification
+
+```typescript
+'use client';
+
+import { CaptchaPuzzle } from '@captchax/nextjs';
+
+export default function CheckoutPage() {
+  const handleSuccess = (token: string) => {
+    console.log('Puzzle verified:', token);
+  };
+
+  return (
+    <CaptchaPuzzle
+      scene="checkout"
+      onSuccess={handleSuccess}
+      width={300}
+      height={200}
+    />
+  );
+}
+```
+
+#### CaptchaRotate - Rotation Verification
+
+```typescript
+'use client';
+
+import { CaptchaRotate } from '@captchax/nextjs';
+
+export default function FeedbackPage() {
+  const handleSuccess = (token: string) => {
+    console.log('Rotate verified:', token);
+  };
+
+  return (
+    <CaptchaRotate
+      scene="feedback"
+      onSuccess={handleSuccess}
+      targetAngle={45}
+      tolerance={10}
+    />
+  );
+}
+```
+
+#### CaptchaText - Text Verification
+
+```typescript
+'use client';
+
+import { CaptchaText } from '@captchax/nextjs';
+
+export default function ContactPage() {
+  const handleSuccess = (token: string) => {
+    console.log('Text verified:', token);
+  };
+
+  return (
+    <CaptchaText
+      scene="contact"
+      onSuccess={handleSuccess}
+      caseSensitive={false}
+      maxLength={6}
+    />
+  );
+}
+```
+
+#### CaptchaIcon - Icon Verification
+
+```typescript
+'use client';
+
+import { CaptchaIcon } from '@captchax/nextjs';
+
+export default function SurveyPage() {
+  const handleSuccess = (token: string) => {
+    console.log('Icon verified:', token);
+  };
+
+  return (
+    <CaptchaIcon
+      scene="survey"
+      onSuccess={handleSuccess}
+      gridSize={3}
+    />
+  );
+}
+```
+
+### 3. Use Hooks
+
+#### useCaptcha Hook
+
+```typescript
+'use client';
+
+import { useCaptcha } from '@captchax/nextjs';
+
+export default function FormPage() {
+  const { token, loading, error, isVerified, verify, reset } = useCaptcha({
+    scene: 'form',
+    onSuccess: (token) => console.log('Verified:', token)
+  });
+
+  return (
+    <div>
+      <button onClick={verify} disabled={loading || isVerified}>
+        {loading ? '验证中...' : isVerified ? '已验证' : '验证'}
+      </button>
+      {token && <p>Token: {token}</p>}
+      <button onClick={reset}>重置</button>
+    </div>
+  );
+}
+```
+
+#### useCaptchaVerify Hook
+
+```typescript
+'use client';
+
+import { useCaptchaVerify } from '@captchax/nextjs';
+
+export default function LoginForm() {
+  const { token, loading, error, isVerified, verify } = useCaptchaVerify({
+    scene: 'login',
+    apiKey: process.env.NEXT_PUBLIC_CAPTCHA_API_KEY,
+    serverUrl: process.env.NEXT_PUBLIC_CAPTCHA_SERVER_URL
+  });
+
+  return (
+    <form>
+      <button onClick={verify} disabled={loading}>
+        {loading ? '验证中...' : '登录'}
+      </button>
+    </form>
+  );
+}
+```
+
+### 4. Use Server Actions
+
+#### Basic Verification
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { verifyCaptchaAction } from '@captchax/nextjs/server-actions';
+
+export async function handleFormSubmit(formData: FormData) {
+  const token = formData.get('captchaToken') as string;
+  
+  const result = await verifyCaptchaAction({
+    token,
+    scene: 'form',
+    required: true
+  });
+
+  if (!result.success) {
+    return { error: result.message };
+  }
+
+  return { success: true };
+}
+```
+
+#### Form Submission
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { submitFormAction } from '@captchax/nextjs/server-actions';
+
+export async function registerAction(formData: FormData) {
+  const result = await submitFormAction({
+    data: {
+      email: formData.get('email'),
+      password: formData.get('password')
+    },
+    captchaToken: formData.get('captchaToken') as string,
+    scene: 'register',
+    validate: async (data) => {
+      const errors: Record<string, string> = {};
+      
+      if (!data.email) {
+        errors.email = '邮箱不能为空';
+      }
+      
+      return errors;
+    }
+  });
+
+  return result;
+}
+```
+
+#### Login/Register Actions
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { loginAction, registerAction } from '@captchax/nextjs/server-actions';
+
+export async function handleLogin(formData: FormData) {
+  const result = await loginAction({
+    username: formData.get('username') as string,
+    password: formData.get('password') as string,
+    captchaToken: formData.get('captchaToken') as string
+  });
+
+  return result;
+}
+
+export async function handleRegister(formData: FormData) {
+  const result = await registerAction({
+    username: formData.get('username') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    captchaToken: formData.get('captchaToken') as string
+  });
+
+  return result;
+}
+```
+
+#### Comment Action
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { commentAction } from '@captchax/nextjs/server-actions';
+
+export async function handleComment(formData: FormData) {
+  const result = await commentAction({
+    content: formData.get('content') as string,
+    postId: formData.get('postId') as string,
+    captchaToken: formData.get('captchaToken') as string
+  });
+
+  return result;
+}
+```
+
+### 5. Server-Side Verification
+
+#### Server Components
 
 ```typescript
 import { verifyCaptcha } from '@captchax/nextjs/server';
@@ -99,12 +436,64 @@ export default async function LoginPage({
 }
 ```
 
-### 4. 中间件保护
+#### API Routes
 
-创建 `middleware.ts`：
+```typescript
+// app/api/verify/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyCaptcha } from '@captchax/nextjs/server';
+
+export async function POST(request: NextRequest) {
+  const { token, scene } = await request.json();
+
+  const result = await verifyCaptcha(token, {
+    scene: scene || 'default'
+  });
+
+  if (result.success) {
+    return NextResponse.json({ 
+      success: true,
+      score: result.score,
+      riskLevel: result.riskLevel
+    });
+  }
+
+  return NextResponse.json({ 
+    success: false, 
+    error: result.error 
+  }, { status: 400 });
+}
+```
+
+### 6. Middleware Protection
+
+Create `middleware.ts`:
 
 ```typescript
 import { captchaMiddleware } from '@captchax/nextjs/middleware';
+
+export default captchaMiddleware;
+
+export const config = {
+  matcher: ['/login/:path*', '/register/:path*', '/checkout/:path*']
+};
+```
+
+Custom Configuration:
+
+```typescript
+import { createCaptchaMiddleware } from '@captchax/nextjs/middleware';
+
+const captchaMiddleware = createCaptchaMiddleware({
+  apiKey: process.env.CAPTCHA_API_KEY,
+  apiSecret: process.env.CAPTCHA_API_SECRET,
+  serverUrl: process.env.CAPTCHA_SERVER_URL,
+  protectedPaths: ['/api/*'],
+  captchaPaths: ['/login', '/register', '/checkout'],
+  bypassPaths: ['/api/health', '/api/public'],
+  tokenCookieName: 'captcha_token',
+  tokenHeaderName: 'x-captcha-token'
+});
 
 export default captchaMiddleware;
 
@@ -113,60 +502,193 @@ export const config = {
 };
 ```
 
-## API 参考
+## API Reference
 
-### 组件
+### Provider
 
 #### CaptchaProvider
-- `apiKey` - API 密钥（必填）
-- `serverUrl` - 服务器地址（可选，默认 https://api.captchax.com）
+
+```typescript
+interface CaptchaProviderProps {
+  children: React.ReactNode;
+  apiKey: string;
+  serverUrl?: string;
+  locale?: string;
+  theme?: 'light' | 'dark' | 'auto';
+  errorBoundary?: boolean;
+  onError?: (error: Error) => void;
+}
+```
+
+### Components
 
 #### CaptchaButton
-- `scene` - 场景标识
-- `onSuccess` - 验证成功回调
-- `onError` - 验证失败回调
-- `text` - 按钮文本
-- `disabled` - 是否禁用
 
-#### CaptchaDialog
-- `open` - 是否打开
-- `onClose` - 关闭回调
-- `onSuccess` - 验证成功回调
-- `scene` - 场景标识
-- `type` - 验证码类型
+```typescript
+interface CaptchaButtonProps {
+  children?: React.ReactNode;
+  scene?: string;
+  onSuccess?: (token: string) => void;
+  onError?: (error: Error) => void;
+  text?: string;
+  disabled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  serverUrl?: string;
+  apiKey?: string;
+  size?: 'small' | 'medium' | 'large';
+  variant?: 'primary' | 'secondary' | 'outline';
+  loadingText?: string;
+  successText?: string;
+}
+```
 
 #### CaptchaSlider
-- `onSuccess` - 验证成功回调
-- `scene` - 场景标识
+
+```typescript
+interface CaptchaSliderProps {
+  onSuccess: (token: string) => void;
+  onError?: (error: Error) => void;
+  onClose?: () => void;
+  scene?: string;
+  backgroundImage?: string;
+  sliderImage?: string;
+  width?: number;
+  height?: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+```
+
+#### CaptchaDialog
+
+```typescript
+interface CaptchaDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: (token: string) => void;
+  onError?: (error: Error) => void;
+  scene?: string;
+  type?: CaptchaType;
+  title?: string;
+  description?: string;
+  showCloseButton?: boolean;
+  closeOnOverlayClick?: boolean;
+  closeOnEscape?: boolean;
+  width?: string | number;
+  height?: string | number;
+}
+```
 
 ### Hooks
 
 #### useCaptcha
+
 ```typescript
-const { token, loading, error, verify, reset } = useCaptcha({
+const { 
+  token, 
+  loading, 
+  error, 
+  isVerified, 
+  verify, 
+  reset 
+} = useCaptcha({
   scene: 'login',
-  onSuccess: (token) => console.log(token)
+  onSuccess: (token) => console.log(token),
+  onError: (error) => console.error(error),
+  serverUrl: 'https://api.captchax.com',
+  apiKey: 'your_api_key',
+  autoVerify: false
 });
 ```
 
 #### useCaptchaVerify
+
 ```typescript
-const { token, loading, error, verify, reset, isVerified } = useCaptchaVerify({
+const { 
+  token, 
+  loading, 
+  error, 
+  isVerified, 
+  verify, 
+  reset 
+} = useCaptchaVerify({
   scene: 'login',
-  apiKey: 'your_api_key'
+  apiKey: 'your_api_key',
+  serverUrl: 'https://api.captchax.com'
 });
 ```
 
-### 服务端
+### Server Actions
+
+#### verifyCaptchaAction
+
+```typescript
+const result = await verifyCaptchaAction({
+  token: 'user_captcha_token',
+  scene: 'login',
+  required: true
+});
+```
+
+#### submitFormAction
+
+```typescript
+const result = await submitFormAction({
+  data: { email: 'test@example.com' },
+  captchaToken: 'user_captcha_token',
+  scene: 'form',
+  validate: async (data) => {
+    const errors: Record<string, string> = {};
+    if (!data.email) errors.email = 'Required';
+    return errors;
+  }
+});
+```
+
+#### loginAction
+
+```typescript
+const result = await loginAction({
+  username: 'user',
+  password: 'pass',
+  captchaToken: 'user_captcha_token'
+});
+```
+
+#### registerAction
+
+```typescript
+const result = await registerAction({
+  username: 'user',
+  email: 'test@example.com',
+  password: 'pass',
+  captchaToken: 'user_captcha_token'
+});
+```
+
+#### commentAction
+
+```typescript
+const result = await commentAction({
+  content: 'Great post!',
+  postId: 'post_123',
+  captchaToken: 'user_captcha_token'
+});
+```
+
+### Server
 
 #### CaptchaXServer
+
 ```typescript
 import { CaptchaXServer } from '@captchax/nextjs/server';
 
 const client = new CaptchaXServer({
   apiKey: 'your_api_key',
   apiSecret: 'your_api_secret',
-  serverUrl: 'https://api.captchax.com'
+  serverUrl: 'https://api.captchax.com',
+  timeout: 5000,
+  retries: 3
 });
 
 const result = await client.verify({
@@ -177,37 +699,73 @@ const result = await client.verify({
 });
 ```
 
-## 验证码类型
+## Captcha Types
 
-| 类型 | 说明 |
-|------|------|
-| slider | 滑块验证码 |
-| click | 点选验证码 |
-| puzzle | 拼图验证码 |
-| rotate | 旋转验证码 |
-| text | 文字验证码 |
-| icon | 图标验证码 |
+| Type | Description | Use Case |
+|------|-------------|----------|
+| slider | Slider captcha | User registration, login |
+| click | Click captcha | Comments, posts |
+| puzzle | Puzzle captcha | Sensitive operations |
+| rotate | Rotation captcha | Advanced verification |
+| text | Text captcha | Form verification |
+| icon | Icon captcha | Surveys |
 
-## 示例项目
+## Examples
 
-参考 `examples/app-router-example` 目录下的完整示例。
+See the `examples/app-router-example` directory for complete examples:
 
-## 开发
+- `app/home/page.tsx` - Basic button and hook examples
+- `app/slider/page.tsx` - Slider captcha examples
+- `app/click/page.tsx` - Click captcha examples
+- `app/login/page.tsx` - Login form with verification
+- `app/api/captcha/verify/route.ts` - API verification route
+- `app/api/captcha/actions/route.ts` - Server actions example
+
+## Development
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 构建
+# Build
 npm run build
 
-# 测试
+# Test
 npm test
 
-# 类型检查
+# Type check
 npm run lint
+
+# Format
+npm run format
 ```
 
-## 许可证
+## Testing
+
+The project uses Jest for testing:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test -- client.test.ts
+```
+
+## CaptchaX API Configuration
+
+- Development: http://localhost:3000
+- Production: https://captchax.example.com
+
+## License
 
 MIT License
+
+## Support
+
+- Documentation: https://docs.captchax.com
+- GitHub: https://github.com/captchax/nextjs
+- Email: support@captchax.com

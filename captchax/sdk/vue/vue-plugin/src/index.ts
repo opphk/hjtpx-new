@@ -1,0 +1,13 @@
+export { default } from './plugin';
+export { default as CaptchaButton } from './components/CaptchaButton.vue';
+export { default as CaptchaDialog } from './components/CaptchaDialog.vue';
+export { default as CaptchaSlider } from './components/CaptchaSlider.vue';
+export { default as CaptchaClick } from './components/CaptchaClick.vue';
+export { default as CaptchaPuzzle } from './components/CaptchaPuzzle.vue';
+export { default as CaptchaRotate } from './components/CaptchaRotate.vue';
+export { default as CaptchaText } from './components/CaptchaText.vue';
+export { default as CaptchaIcon } from './components/CaptchaIcon.vue';
+export { default as CaptchaProvider } from './components/CaptchaProvider.vue';
+export * from './composables/useCaptcha';
+export * from './composables/useCaptchaState';
+export * from './types';

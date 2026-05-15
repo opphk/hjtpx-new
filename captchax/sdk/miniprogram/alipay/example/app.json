@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/slider/slider",
+    "pages/click/click",
+    "pages/puzzle/puzzle",
+    "pages/rotate/rotate",
+    "pages/text/text",
+    "pages/icon/icon"
+  ],
+  "subPackages": [],
+  "window": {
+    "defaultTitle": "CaptchaX 验证码示例",
+    "titleBarColor": "#1890ff"
+  }
+}

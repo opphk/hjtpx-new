@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "text-captcha": "/text-captcha/text-captcha"
+  },
+  "navigationBarTitleText": "文字验证码"
+}

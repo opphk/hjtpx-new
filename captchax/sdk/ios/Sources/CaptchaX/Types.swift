@@ -1,6 +1,6 @@
 import Foundation
 
-public enum CaptchaType: String {
+public enum CaptchaType: String, Sendable, CaseIterable {
     case slider
     case click
     case rotate
@@ -18,9 +18,31 @@ public enum CaptchaType: String {
         case .icon: return "图标验证"
         }
     }
+
+    public var icon: String {
+        switch self {
+        case .slider: return "slider.horizontal.3"
+        case .click: return "hand.tap"
+        case .rotate: return "rotate.right"
+        case .puzzle: return "puzzlepiece"
+        case .text: return "textformat"
+        case .icon: return "square.grid.2x2"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .slider: return "请滑动完成验证"
+        case .click: return "请点击正确的图片"
+        case .rotate: return "请旋转图片到正确角度"
+        case .puzzle: return "请将拼图移动到正确位置"
+        case .text: return "请输入验证码"
+        case .icon: return "请选择所有匹配的图标"
+        }
+    }
 }
 
-public enum CaptchaXError: Error, LocalizedError {
+public enum CaptchaXError: Error, LocalizedError, Sendable {
     case notInitialized
     case networkError(underlying: Error)
     case serverError(code: Int, message: String)
@@ -28,6 +50,7 @@ public enum CaptchaXError: Error, LocalizedError {
     case invalidConfig
     case verificationFailed
     case cancelled
+    case userCancelled
 
     public var errorDescription: String? {
         switch self {
@@ -45,11 +68,13 @@ public enum CaptchaXError: Error, LocalizedError {
             return "Verification failed"
         case .cancelled:
             return "Verification was cancelled"
+        case .userCancelled:
+            return "User cancelled the verification"
         }
     }
 }
 
-public struct CaptchaResult: Codable {
+public struct CaptchaResult: Codable, Sendable {
     public let token: String
     public let expiresAt: Date?
     public let metadata: [String: String]?
@@ -66,7 +91,7 @@ public struct CaptchaResult: Codable {
     }
 }
 
-public struct UploadResult: Codable {
+public struct UploadResult: Codable, Sendable {
     public let imageId: String
     public let url: String?
 

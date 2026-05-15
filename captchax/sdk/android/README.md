@@ -1,66 +1,49 @@
 # CaptchaX Android SDK
 
-CaptchaX Android SDK 是 CaptchaX 行为验证系统的官方 Android 客户端 SDK，支持 Kotlin 和 Java，提供简单易用的验证码集成方案。
+一个功能强大的 Android 验证码 SDK，支持多种验证码类型，Kotlin 协程优化和 Jetpack Compose 组件。
 
 ## 功能特性
 
-### 🎯 支持的验证码类型
+### 🎯 多种验证码类型
 - **滑块验证码 (Slider)** - 拖动滑块完成拼图
-- **点选验证码 (Click)** - 按顺序点击指定区域
+- **点选验证码 (Click)** - 依次点击指定位置
 - **拼图验证码 (Puzzle)** - 拖动滑块填充拼图
 - **旋转验证码 (Rotate)** - 旋转图片至正确角度
-- **文字验证码 (Text)** - 输入图片中的文字
-- **图标验证码 (Icon)** - 依次点击对应图标
+- **文字验证码 (Text)** - 输入图中文字
+- **图标验证码 (Icon)** - 选择正确的图标
 
-### ✨ 核心特性
-- **Kotlin / Java 双支持** - 完整支持 Kotlin 和 Java 互操作
-- **协程异步处理** - 使用 Kotlin 协程处理异步操作
-- **智能图片缓存** - LRU 缓存策略，减少网络请求
-- **设备指纹识别** - 生成唯一设备标识
-- **安全签名验证** - HMAC-SHA256 请求签名
-- **预加载机制** - 提前加载验证码，提升用户体验
-- **Jetpack Compose 支持** - 完整的 Compose 组件封装
+### 🚀 Kotlin 协程优化
+- 使用 `suspend` 函数处理异步操作
+- `Flow` 用于响应式数据流
+- `CoroutineScope` 管理协程生命周期
+- 完善的错误处理机制
 
-## 项目结构
+### 🎨 Jetpack Compose 支持
+- Material Design 3 设计风格
+- 响应式布局适配
+- 流畅的动画效果
+- 现代化 UI 组件
 
-```
-captchax/sdk/android/
-├── captchax/                         # SDK 模块
-│   ├── src/main/
-│   │   ├── java/com/captchax/sdk/
-│   │   │   ├── CaptchaX.kt          # 主入口类
-│   │   │   ├── CaptchaConfig.kt     # 配置类
-│   │   │   ├── CaptchaView.kt       # 验证码视图
-│   │   │   ├── CaptchaListener.kt   # 回调接口
-│   │   │   ├── CaptchaType.kt       # 验证码类型
-│   │   │   ├── NetworkClient.kt     # 网络客户端
-│   │   │   ├── DeviceFingerprint.kt # 设备指纹
-│   │   │   ├── ImageCache.kt        # 图片缓存
-│   │   │   └── util/
-│   │   │       ├── Logger.kt         # 日志工具
-│   │   │       └── Extensions.kt    # 扩展函数
-│   │   └── res/
-│   │       ├── layout/              # 布局文件
-│   │       ├── drawable/            # Drawable 资源
-│   │       └── values/              # 字符串资源
-│   └── build.gradle.kts            # SDK 构建配置
-├── app/                             # 示例应用
-│   ├── src/main/java/com/captchax/example/
-│   │   ├── MainActivity.kt         # Kotlin 示例
-│   │   ├── JavaExampleActivity.java # Java 示例
-│   │   └── ComposeExample.kt       # Compose 示例
-│   └── build.gradle.kts            # 示例构建配置
-├── build.gradle.kts                # 根构建配置
-├── settings.gradle.kts              # 项目设置
-├── gradle.properties               # Gradle 属性
-└── README.md                       # 本文档
-```
+### 📦 其他特性
+- 图片缓存机制
+- 设备指纹识别
+- 网络请求优化
+- 完善的测试覆盖
 
-## 安装指南
+## 环境配置
 
-### 方式一：Maven Central
+### 开发环境
+- 服务器地址: `http://localhost:3000`
+- 调试模式: 启用
 
-在 `settings.gradle.kts` 中添加仓库：
+### 生产环境
+- 服务器地址: `https://captchax.example.com`
+
+## 快速开始
+
+### 1. 添加依赖
+
+首先，在 `settings.gradle.kts` 中添加 JitPack 仓库：
 
 ```kotlin
 dependencyResolutionManagement {
@@ -68,56 +51,25 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-    }
-}
-```
-
-在 `build.gradle.kts` 中添加依赖：
-
-```kotlin
-dependencies {
-    implementation("com.captchax.sdk:captchax:1.0.0")
-}
-```
-
-### 方式二：本地 Module
-
-将 SDK Module 复制到项目中：
-
-```kotlin
-// settings.gradle.kts
-include(":captchax")
-```
-
-```kotlin
-// app/build.gradle.kts
-dependencies {
-    implementation(project(":captchax"))
-}
-```
-
-### 方式三：JitPack
-
-```kotlin
-// settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
         maven { url = uri("https://jitpack.io") }
     }
 }
+```
 
-// app/build.gradle.kts
+然后在模块的 `build.gradle.kts` 中添加依赖：
+
+```kotlin
 dependencies {
-    implementation("com.github.user:CaptchaX-Android:1.0.0")
+    implementation("com.captchax:sdk-android:1.0.0")
 }
 ```
 
-## 快速开始
+### 2. 初始化 SDK
 
-### 1. 在 Application 中初始化 SDK
+在 Application 类中初始化 CaptchaX SDK：
 
 ```kotlin
-class MyApplication : Application() {
+class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         
@@ -125,438 +77,667 @@ class MyApplication : Application() {
             context = this,
             apiKey = "YOUR_API_KEY",
             apiSecret = "YOUR_API_SECRET",
-            serverUrl = "https://api.captchax.com"
+            serverUrl = "https://captchax.example.com"
         )
     }
 }
 ```
 
-### 2. 设置全局回调（可选）
+或者使用 Builder 模式：
 
 ```kotlin
-CaptchaX.listener = object : CaptchaListener {
-    override fun onSuccess(token: String) {
-        Log.d("CaptchaX", "验证成功: $token")
-    }
-    
-    override fun onError(error: CaptchaError) {
-        Log.e("CaptchaX", "验证失败: ${error.message}")
-    }
-    
-    override fun onClose() {
-        Log.d("CaptchaX", "验证窗口关闭")
-    }
-}
+CaptchaX.initialize(
+    context = this,
+    config = CaptchaConfig.builder()
+        .apiKey("YOUR_API_KEY")
+        .apiSecret("YOUR_API_SECRET")
+        .serverUrl("https://captchax.example.com")
+        .timeout(30000L)
+        .cacheEnabled(true)
+        .preloadEnabled(true)
+        .build()
+)
 ```
 
-### 3. 调用验证
+### 3. 使用验证码
 
-#### Kotlin 示例
+#### 传统 View 方式
 
 ```kotlin
-fun login(view: View) {
-    CaptchaX.verify(this, "login") { result ->
-        result.onSuccess { token ->
-            // 使用 token 进行后续操作
-            performLogin(token)
-        }.onFailure { error ->
-            // 处理错误
-            showError(error.message ?: "验证失败")
-        }
-    }
-}
-```
+val captchaView = findViewById<CaptchaView>(R.id.captchaView)
 
-#### Java 示例
-
-```java
-public void login(View view) {
-    CaptchaX.INSTANCE.verify(this, "login", result -> {
-        if (result.isSuccess()) {
-            String token = result.getOrNull();
-            performLogin(token);
-        } else {
-            Exception error = result.getExceptionOrNull();
-            showError(error != null ? error.getMessage() : "验证失败");
-        }
-    });
-}
-```
-
-### 4. 使用 CaptchaView 自定义UI
-
-```kotlin
-val captchaView = CaptchaView(context)
 captchaView.listener = object : CaptchaViewListener {
     override fun onSuccess(token: String) {
-        Log.d("CaptchaX", "验证成功: $token")
+        // 验证成功，token 可用于后续验证
+        Log.d("CaptchaX", "Verification success: $token")
     }
     
     override fun onError(error: CaptchaError) {
-        Log.e("CaptchaX", "错误: ${error.message}")
+        // 验证失败
+        Log.e("CaptchaX", "Verification failed: ${error.message}")
     }
     
     override fun onClose() {
-        Log.d("CaptchaX", "关闭")
+        // 用户关闭验证码
     }
     
     override fun onReady() {
-        Log.d("CaptchaX", "就绪")
+        // 验证码加载完成
     }
     
     override fun onLoading() {
-        Log.d("CaptchaX", "加载中")
+        // 验证码加载中
     }
     
     override fun onLoaded() {
-        Log.d("CaptchaX", "已加载")
+        // 验证码加载完成
     }
 }
 
 captchaView.load(CaptchaType.SLIDER)
 ```
 
-## Jetpack Compose 集成
+#### Jetpack Compose 方式
 
-### Compose 按钮组件
+```kotlin
+@Composable
+fun CaptchaScreen() {
+    var showCaptcha by remember { mutableStateOf(false) }
+    
+    Button(onClick = { showCaptcha = true }) {
+        Text("显示验证码")
+    }
+    
+    if (showCaptcha) {
+        CaptchaXDialog(
+            type = CaptchaType.SLIDER,
+            scene = "login",
+            onSuccess = { token ->
+                Log.d("CaptchaX", "Token: $token")
+                showCaptcha = false
+            },
+            onError = { error ->
+                Log.e("CaptchaX", "Error: ${error.message}")
+                showCaptcha = false
+            },
+            onDismiss = { showCaptcha = false },
+            requestCaptcha = { scene, type ->
+                // 请求验证码数据
+                captchaRepository.requestCaptcha(scene, type)
+            },
+            verifyCaptcha = { request ->
+                // 验证结果
+                captchaRepository.verify(request)
+            }
+        )
+    }
+}
+```
+
+#### 使用 CaptchaButton 组件
 
 ```kotlin
 @Composable
 fun LoginScreen() {
     CaptchaButton(
         scene = "login",
+        type = CaptchaType.SLIDER,
+        text = "完成验证",
         onSuccess = { token ->
-            performLogin(token)
+            // 验证成功
         },
         onError = { error ->
-            showError(error.message ?: "验证失败")
+            // 验证失败
+        },
+        requestCaptcha = { scene, type ->
+            repository.requestCaptcha(scene, type)
+        },
+        verifyCaptcha = { request ->
+            repository.verify(request)
         }
     )
 }
 ```
 
-### 自定义验证码对话框
+### 4. 验证码类型详解
+
+#### 滑块验证码 (Slider)
 
 ```kotlin
-@Composable
-fun CustomCaptchaDialog(
-    onDismiss: () -> Unit,
-    onSuccess: (String) -> Unit,
-    onError: (CaptchaError) -> Unit
-) {
-    var selectedType by remember { mutableStateOf(CaptchaType.SLIDER) }
-    
-    CaptchaDialog(
-        onDismiss = onDismiss,
-        onSuccess = onSuccess,
-        onError = onError
-    )
+// 加载滑块验证码
+captchaView.load(CaptchaType.SLIDER)
+
+// 监听拖动进度
+val progress = captchaView.getProgress()
+```
+
+#### 点选验证码 (Click)
+
+```kotlin
+// 加载点选验证码
+captchaView.load(CaptchaType.CLICK)
+
+// 点击位置会自动收集
+val clickPoints = captchaView.getClickPoints()
+```
+
+#### 旋转验证码 (Rotate)
+
+```kotlin
+// 加载旋转验证码
+captchaView.load(CaptchaType.ROTATE)
+
+// 获取当前旋转角度
+val angle = captchaView.getRotationAngle()
+```
+
+#### 文字验证码 (Text)
+
+```kotlin
+// 加载文字验证码
+captchaView.load(CaptchaType.TEXT)
+
+// 获取输入的文字
+val text = captchaView.getInputText()
+```
+
+#### 图标验证码 (Icon)
+
+```kotlin
+// 加载图标验证码
+captchaView.load(CaptchaType.ICON)
+
+// 获取选择的图标
+val selectedIcons = captchaView.getSelectedIcons()
+```
+
+### 5. 验证 API
+
+```kotlin
+// 方式一：回调方式
+CaptchaX.verify(activity, "login") { result ->
+    result.onSuccess { token ->
+        Log.d("CaptchaX", "Token: $token")
+    }.onFailure { error ->
+        Log.e("CaptchaX", "Error: ${error.message}")
+    }
 }
-```
 
-## API 文档
-
-### CaptchaX
-
-SDK 主入口类，提供全局配置和验证方法。
-
-#### 方法
-
-| 方法 | 说明 |
-|------|------|
-| `initialize(context, apiKey, apiSecret)` | 初始化 SDK |
-| `verify(activity, scene, callback)` | 请求验证码验证 |
-| `preload(scene)` | 预加载验证码 |
-| `destroy()` | 销毁 SDK，释放资源 |
-
-### CaptchaConfig
-
-SDK 配置类，使用 Builder 模式。
-
-```kotlin
-val config = CaptchaConfig.builder()
-    .apiKey("YOUR_API_KEY")
-    .apiSecret("YOUR_API_SECRET")
-    .serverUrl("https://api.captchax.com")
-    .timeout(30000L)
-    .cacheEnabled(true)
-    .preloadEnabled(true)
-    .build()
-
-CaptchaX.initialize(this, config)
-```
-
-### CaptchaType
-
-验证码类型枚举。
-
-| 类型 | 说明 |
-|------|------|
-| `SLIDER` | 滑块验证码 |
-| `CLICK` | 点选验证码 |
-| `ROTATE` | 旋转验证码 |
-| `PUZZLE` | 拼图验证码 |
-| `TEXT` | 文字验证码 |
-| `ICON` | 图标验证码 |
-
-### CaptchaListener
-
-全局验证回调接口。
-
-```kotlin
-interface CaptchaListener {
-    fun onSuccess(token: String)      // 验证成功
-    fun onError(error: CaptchaError)  // 验证失败
-    fun onClose()                     // 用户关闭验证
-}
-```
-
-### CaptchaViewListener
-
-CaptchaView 视图回调接口。
-
-```kotlin
-interface CaptchaViewListener {
-    fun onSuccess(token: String)      // 验证成功
-    fun onError(error: CaptchaError)  // 验证失败
-    fun onClose()                     // 用户关闭验证
-    fun onReady()                     // 视图就绪
-    fun onLoading()                   // 开始加载
-    fun onLoaded()                    // 加载完成
-}
-```
-
-### CaptchaError
-
-验证错误类型。
-
-| 错误类型 | 说明 |
-|---------|------|
-| `NetworkError` | 网络错误 |
-| `ServerError` | 服务器错误 |
-| `ValidationError` | 验证失败 |
-| `TimeoutError` | 请求超时 |
-| `CancelledError` | 用户取消 |
-| `UnknownError` | 未知错误 |
-
-## 示例代码
-
-### 完整登录流程
-
-```kotlin
-class LoginActivity : AppCompatActivity() {
-    
-    private lateinit var usernameInput: EditText
-    private lateinit var passwordInput: EditText
-    private lateinit var captchaButton: Button
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login)
-        
-        // 初始化 CaptchaX
-        CaptchaX.initialize(this, "API_KEY", "API_SECRET")
-        
-        // 设置回调
-        CaptchaX.listener = createCaptchaListener()
-        
-        // 预加载验证码
-        CaptchaX.preload("login")
-        
-        // 绑定视图
-        usernameInput = findViewById(R.id.username)
-        passwordInput = findViewById(R.id.password)
-        captchaButton = findViewById(R.id.btnLogin)
-        
-        captchaButton.setOnClickListener {
-            showCaptchaAndLogin()
+// 方式二：Flow 方式
+val flow = captchaRepository.requestCaptcha("login", CaptchaType.SLIDER)
+flow.collect { state ->
+    when (state) {
+        is CaptchaRepository.CaptchaState.Loading -> {
+            // 显示加载状态
+        }
+        is CaptchaRepository.CaptchaState.Success -> {
+            // 获取验证码数据
+            val data = state.data
+        }
+        is CaptchaRepository.CaptchaState.Error -> {
+            // 处理错误
+            val error = state.error
         }
     }
+}
+```
+
+### 6. 预加载验证码
+
+```kotlin
+// 预加载验证码数据
+CaptchaX.preload("login")
+```
+
+## Kotlin 协程优化
+
+### Flow 数据流
+
+```kotlin
+// 请求验证码，返回 Flow
+val captchaFlow: Flow<CaptchaState<CaptchaData>> = 
+    captchaRepository.requestCaptcha(scene, type)
+
+// 收集状态
+captchaFlow.collect { state ->
+    when (state) {
+        is CaptchaState.Loading -> showLoading()
+        is CaptchaState.Success -> showCaptcha(state.data)
+        is CaptchaState.Error -> showError(state.error)
+    }
+}
+```
+
+### Suspend 函数
+
+```kotlin
+// 同步验证
+suspend fun verifyCaptcha(request: VerificationRequest): Result<String> {
+    return verificationManager.verify(request)
+}
+
+// 调用
+viewModelScope.launch {
+    val result = verifyCaptcha(request)
+    result.onSuccess { token ->
+        // 处理成功
+    }
+}
+```
+
+### CoroutineScope 管理
+
+```kotlin
+class CaptchaViewModel : ViewModel() {
     
-    private fun showCaptchaAndLogin() {
-        val username = usernameInput.text.toString()
-        val password = passwordInput.text.toString()
-        
-        if (!validateInput(username, password)) {
-            return
-        }
-        
-        CaptchaX.verify(this, "login") { result ->
-            result.onSuccess { token ->
-                performLogin(username, password, token)
-            }.onFailure { error ->
-                showError("验证失败: ${error.message}")
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    
+    fun loadCaptcha() {
+        scope.launch {
+            try {
+                val data = repository.loadCaptcha()
+                _captchaData.value = data
+            } catch (e: Exception) {
+                _error.value = e.message
             }
         }
     }
     
-    private fun performLogin(username: String, password: String, captchaToken: String) {
-        // 调用登录 API
-        api.login(username, password, captchaToken) { response ->
-            if (response.isSuccess) {
-                navigateToMain()
-            } else {
-                showError("登录失败")
-            }
-        }
-    }
-    
-    private fun createCaptchaListener() = object : CaptchaListener {
-        override fun onSuccess(token: String) {
-            Log.d("Login", "验证成功: $token")
-        }
-        
-        override fun onError(error: CaptchaError) {
-            Log.e("Login", "验证失败: ${error.message}")
-        }
-        
-        override fun onClose() {
-            Log.d("Login", "用户关闭验证")
-        }
+    override fun onCleared() {
+        super.onCleared()
+        scope.cancel()
     }
 }
-```
-
-### Fragment 中使用
-
-```kotlin
-class RegisterFragment : Fragment() {
-    
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        
-        val btnRegister = view.findViewById<Button>(R.id.btnRegister)
-        btnRegister.setOnClickListener {
-            CaptchaX.verify(requireActivity(), "register") { result ->
-                result.onSuccess { token ->
-                    registerUser(token)
-                }.onFailure { error ->
-                    showError(error.message ?: "验证失败")
-                }
-            }
-        }
-    }
-    
-    private fun registerUser(captchaToken: String) {
-        // 注册逻辑
-    }
-}
-```
-
-### Dialog 中使用
-
-```kotlin
-fun showCaptchaDialog(activity: Activity) {
-    val dialog = AlertDialog.Builder(activity)
-        .setTitle("安全验证")
-        .setMessage("请完成验证后继续")
-        .setView(CaptchaView(activity).apply {
-            load(CaptchaType.SLIDER)
-        })
-        .setNegativeButton("取消") { d, _ -> d.dismiss() }
-        .create()
-    
-    dialog.show()
-}
-```
-
-## ProGuard 配置
-
-如果启用 ProGuard，请添加以下规则：
-
-```proguard
-# CaptchaX SDK
--keep class com.captchax.sdk.** { *; }
-
-# OkHttp
--dontwarn okhttp3.**
--dontwarn okio.**
--keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
-
-# Kotlin
--keep class kotlin.** { *; }
--dontwarn kotlin.**
-
-# Coroutines
--keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
--keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
 ```
 
 ## 错误处理
 
+CaptchaX 定义了多种错误类型：
+
 ```kotlin
-CaptchaX.verify(this, "login") { result ->
-    result.fold(
-        onSuccess = { token ->
-            // 使用 token
-        },
-        onFailure = { error ->
-            when (error) {
-                is CaptchaError.NetworkError -> {
-                    showToast("网络连接失败")
-                }
-                is CaptchaError.TimeoutError -> {
-                    showToast("请求超时，请重试")
-                }
-                is CaptchaError.ValidationError -> {
-                    showToast("验证失败，请重试")
-                }
-                is CaptchaError.ServerError -> {
-                    showToast("服务器错误")
-                }
-                is CaptchaError.CancelledError -> {
-                    // 用户取消，无需处理
-                }
-                else -> {
-                    showToast("未知错误")
-                }
+// 网络错误
+CaptchaError.NetworkError("Network failed")
+
+// 服务器错误
+CaptchaError.ServerError("Server error", "ERROR_CODE")
+
+// 验证错误
+CaptchaError.ValidationError("Invalid input")
+
+// 超时错误
+CaptchaError.TimeoutError("Request timeout")
+
+// 取消错误
+CaptchaError.CancelledError()
+
+// 未知错误
+CaptchaError.UnknownError("Unknown error")
+```
+
+处理错误：
+
+```kotlin
+captchaView.listener = object : CaptchaViewListener {
+    override fun onError(error: CaptchaError) {
+        when (error) {
+            is CaptchaError.NetworkError -> {
+                // 网络问题，提示用户检查网络
+            }
+            is CaptchaError.ValidationError -> {
+                // 验证失败，可以重试
+            }
+            is CaptchaError.TimeoutError -> {
+                // 请求超时
+            }
+            else -> {
+                // 其他错误
             }
         }
+    }
+}
+```
+
+## 配置选项
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `apiKey` | String | 必需 | API 密钥 |
+| `apiSecret` | String | 必需 | API 密钥 |
+| `serverUrl` | String | 必需 | 服务器地址 |
+| `timeout` | Long | 30000 | 请求超时时间(ms) |
+| `cacheEnabled` | Boolean | true | 是否启用缓存 |
+| `preloadEnabled` | Boolean | true | 是否启用预加载 |
+
+## API 参考
+
+### CaptchaX
+
+主要入口类，提供 SDK 初始化和验证码操作。
+
+```kotlin
+object CaptchaX {
+    // 初始化
+    fun initialize(context: Context, config: CaptchaConfig)
+    
+    // 验证
+    fun verify(activity: Activity, scene: String, callback: (Result<String>) -> Unit)
+    
+    // 预加载
+    fun preload(scene: String)
+    
+    // 获取验证码视图
+    fun getCaptchaView(activity: Activity, type: CaptchaType, listener: CaptchaViewListener): CaptchaView
+    
+    // 销毁
+    fun destroy()
+}
+```
+
+### CaptchaConfig
+
+配置类，使用 Builder 模式创建。
+
+```kotlin
+val config = CaptchaConfig.builder()
+    .apiKey("key")
+    .apiSecret("secret")
+    .serverUrl("url")
+    .timeout(30000L)
+    .cacheEnabled(true)
+    .preloadEnabled(true)
+    .build()
+```
+
+### CaptchaRepository
+
+数据仓库类，处理验证码数据的请求和验证。
+
+```kotlin
+class CaptchaRepository {
+    // 请求验证码
+    fun requestCaptcha(scene: String, type: CaptchaType): Flow<CaptchaState<CaptchaData>>
+    
+    // 验证滑块
+    suspend fun verifySlider(token: String, distance: Float): Result<String>
+    
+    // 验证点击
+    suspend fun verifyClicks(token: String, points: List<Pair<Float, Float>>): Result<String>
+    
+    // 验证旋转
+    suspend fun verifyRotation(token: String, angle: Float): Result<String>
+    
+    // 验证文字
+    suspend fun verifyText(token: String, text: String): Result<String>
+    
+    // 验证图标
+    suspend fun verifyIcon(token: String, icons: List<String>): Result<String>
+}
+```
+
+### CaptchaStateHolder
+
+状态管理器，管理和跟踪验证码状态。
+
+```kotlin
+val holder = CaptchaStateHolder()
+
+// 状态
+val state: StateFlow<CaptchaState>
+
+// 进度
+val progress: StateFlow<Float>
+
+// 点击点
+val clickPoints: StateFlow<List<Pair<Float, Float>>>
+
+// 旋转角度
+val rotationAngle: StateFlow<Float>
+
+// 剩余尝试次数
+val remainingAttempts: StateFlow<Int>
+```
+
+## Compose 组件
+
+### CaptchaXDialog
+
+完整的验证码对话框组件。
+
+```kotlin
+CaptchaXDialog(
+    type = CaptchaType.SLIDER,
+    scene = "login",
+    onSuccess = { token -> },
+    onError = { error -> },
+    onDismiss = { },
+    requestCaptcha = { scene, type -> },
+    verifyCaptcha = { request -> }
+)
+```
+
+### CaptchaButton
+
+验证码按钮组件。
+
+```kotlin
+CaptchaButton(
+    scene = "login",
+    type = CaptchaType.SLIDER,
+    text = "验证",
+    onSuccess = { token -> },
+    onError = { error -> },
+    requestCaptcha = { scene, type -> },
+    verifyCaptcha = { request -> }
+)
+```
+
+### CaptchaTypeSelector
+
+验证码类型选择器。
+
+```kotlin
+CaptchaTypeSelector(
+    onTypeSelected = { type -> }
+)
+```
+
+## 测试
+
+### 运行单元测试
+
+```bash
+./gradlew test
+```
+
+### 运行所有测试
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+### 查看测试覆盖率
+
+```bash
+./gradlew testDebugUnitTestCoverage
+```
+
+## 性能优化
+
+### 1. 图片缓存
+
+SDK 内置 LRU 图片缓存，减少重复下载：
+
+```kotlin
+// 获取缓存的验证码图片
+val cachedBitmap = imageCache.get(type.name)
+
+// 手动缓存图片
+imageCache.put(type.name, bitmap)
+
+// 清空缓存
+imageCache.clear()
+```
+
+### 2. 预加载
+
+提前加载验证码数据，提升用户体验：
+
+```kotlin
+// 在用户登录页面
+CaptchaX.preload("login")
+
+// 实际需要验证码时，加载更快
+captchaView.load(CaptchaType.SLIDER)
+```
+
+### 3. 协程优化
+
+合理使用协程，避免内存泄漏：
+
+```kotlin
+class CaptchaManager {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var loadJob: Job? = null
+    
+    fun loadCaptcha() {
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            // 加载验证码
+        }
+    }
+    
+    fun destroy() {
+        loadJob?.cancel()
+        scope.cancel()
+    }
+}
+```
+
+## 安全性
+
+### 1. 请求签名
+
+所有请求都经过 HMAC-SHA256 签名：
+
+```kotlin
+private fun signRequest(requestBuilder: Request.Builder, endpoint: String, params: Map<String, Any>) {
+    val timestamp = System.currentTimeMillis().toString()
+    val nonce = UUID.randomUUID().toString()
+    
+    val signString = buildString {
+        append(apiKey)
+        append(timestamp)
+        append(nonce)
+        params.entries.sortedBy { it.key }.forEach { append(it.key).append(it.value) }
+    }
+    
+    val signature = hmacSha256(signString, apiSecret)
+    
+    requestBuilder
+        .addHeader("X-API-Key", apiKey)
+        .addHeader("X-Timestamp", timestamp)
+        .addHeader("X-Nonce", nonce)
+        .addHeader("X-Signature", signature)
+}
+```
+
+### 2. 设备指纹
+
+采集设备信息用于安全验证：
+
+```kotlin
+val fingerprint = DeviceFingerprint.generate()
+val deviceInfo = DeviceFingerprint.collect()
+```
+
+## 常见问题
+
+### Q: 如何处理网络错误？
+
+A: 设置错误监听器：
+
+```kotlin
+captchaView.listener = object : CaptchaViewListener {
+    override fun onError(error: CaptchaError) {
+        when (error) {
+            is CaptchaError.NetworkError -> {
+                // 提示用户检查网络
+            }
+            is CaptchaError.TimeoutError -> {
+                // 请求超时，可以重试
+            }
+        }
+    }
+}
+```
+
+### Q: 如何自定义验证码样式？
+
+A: 在 Compose 中使用主题：
+
+```kotlin
+CaptchaXTheme(darkTheme = false) {
+    CaptchaXDialog(
+        type = CaptchaType.SLIDER,
+        // ...
     )
 }
 ```
 
-## 注意事项
+### Q: 如何限制验证尝试次数？
 
-1. **网络权限**：确保在 `AndroidManifest.xml` 中添加网络权限
-   ```xml
-   <uses-permission android:name="android.permission.INTERNET" />
-   ```
+A: 使用 CaptchaStateHolder：
 
-2. **Cleartext Traffic**：如果使用 HTTP，请配置
-   ```xml
-   <application android:usesCleartextTraffic="true">
-   ```
+```kotlin
+val remainingAttempts = captchaStateHolder.remainingAttempts
+remainingAttempts.collect { attempts ->
+    if (attempts <= 0) {
+        // 达到最大尝试次数
+    }
+}
+```
 
-3. **Context 泄漏**：在 Activity/Fragment 销毁时调用 `CaptchaX.destroy()`
+### Q: 如何获取验证结果？
 
-4. **线程安全**：SDK 方法可在主线程调用，内部使用协程处理异步操作
+A: 多种方式：
 
-## 常见问题
+```kotlin
+// 方式一：回调
+captchaView.listener = object : CaptchaViewListener {
+    override fun onSuccess(token: String) {
+        // 处理 token
+    }
+}
 
-### Q: 如何获取 API Key 和 Secret？
-A: 请访问 CaptchaX 管理后台 (https://captchax.com/admin) 注册并创建应用。
+// 方式二：Result
+CaptchaX.verify(activity, "login") { result ->
+    result.onSuccess { token -> }
+    result.onFailure { error -> }
+}
 
-### Q: 验证失败怎么办？
-A: 请检查：
-1. API Key 和 Secret 是否正确
-2. 网络连接是否正常
-3. 服务器地址是否正确
+// 方式三：Flow
+viewModelScope.launch {
+    captchaRepository.requestCaptcha(scene, type).collect { state ->
+        // 处理状态
+    }
+}
+```
 
-### Q: 如何自定义验证码样式？
-A: 可以通过修改 `captcha_view.xml` 布局文件来自定义样式。
+## 更新日志
 
-### Q: 支持哪些 Android 版本？
-A: SDK 支持 Android 5.0 (API 21) 及以上版本。
-
-## 版本历史
-
-### v1.0.0 (2026-05-15)
+### v1.0.0 (2024-01-01)
 - 初始版本发布
 - 支持 6 种验证码类型
-- 完整的 Kotlin/Java 互操作
-- Jetpack Compose 支持
+- Kotlin 协程优化
+- Jetpack Compose 组件
+- 完整的测试覆盖
 
-## License
+## 许可证
 
-Copyright © 2026 CaptchaX. All rights reserved.
+MIT License
+
+## 联系方式
+
+- 邮箱: support@captchax.com
+- 网站: https://captchax.com
+- GitHub: https://github.com/captchax/android-sdk

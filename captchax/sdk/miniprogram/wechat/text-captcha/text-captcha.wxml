@@ -1,0 +1,44 @@
+<view class="text-captcha-container">
+  <view class="question-section">
+    <text class="question-text">{{question}}</text>
+  </view>
+  
+  <view class="image-section">
+    <image 
+      class="captcha-image"
+      src="{{localImageUrl || imageUrl}}"
+      mode="aspectFit"
+      bindtap="refresh"
+    />
+    <view class="refresh-hint">点击图片刷新</view>
+  </view>
+  
+  <view class="options-section">
+    <block wx:for="{{options}}" wx:key="index">
+      <view 
+        class="option-item {{selectedAnswer === item ? 'selected' : ''}} {{isVerified ? (item === selectedAnswer ? (verifyResult ? 'correct' : 'wrong') : '') : ''}}"
+        bindtap="onOptionSelect"
+        data-answer="{{item}}"
+      >
+        <view class="option-marker">
+          <text>{{index + 1}}</text>
+        </view>
+        <text class="option-text">{{item}}</text>
+        <view wx:if="{{isVerified && item === selectedAnswer}}" class="option-result">
+          <text wx:if="{{verifyResult}}">✓</text>
+          <text wx:else>✗</text>
+        </view>
+      </view>
+    </block>
+  </view>
+  
+  <view class="action-section">
+    <button 
+      class="submit-btn {{selectedAnswer ? 'active' : ''}}"
+      bindtap="submitAnswer"
+      disabled="{{!selectedAnswer || isVerified}}"
+    >
+      {{isVerified ? (verifyResult ? '验证成功' : '验证失败') : '提交答案'}}
+    </button>
+  </view>
+</view>

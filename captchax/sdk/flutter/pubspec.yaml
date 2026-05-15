@@ -1,0 +1,24 @@
+name: captcha_flutter
+description: CaptchaX Flutter SDK - 多类型验证码解决方案
+version: 1.0.0
+author: CaptchaX Team
+homepage: https://captchax.example.com
+repository: https://github.com/captchax/flutter-sdk
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  cached_network_image: ^3.3.0
+  flutter_cache_manager: ^3.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true

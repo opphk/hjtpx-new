@@ -2,17 +2,17 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: CaptchaX 1.0.0\n"
+"Project-Id-Version: CaptchaX 1.1.0\n"
 "Report-Msgid-Bugs-To: https://captchax.com/support\n"
-"POT-Creation-Date: 2024-01-01 00:00:00+0000\n"
-"PO-Revision-Date: 2024-01-01 00:00:00+0000\n"
+"POT-Creation-Date: 2024-01-15 00:00:00+0000\n"
+"PO-Revision-Date: 2024-01-15 00:00:00+0000\n"
 "Last-Translator: CaptchaX Team <support@captchax.com>\n"
-"Language-Team: Chinese (Simplified)\n"
-"Language: zh_CN\n"
+"Language-Team: CaptchaX Team\n"
+"Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "请先完成验证"
 msgstr "Please complete the verification first"
@@ -39,7 +39,7 @@ msgid "注册表单"
 msgstr "Registration Form"
 
 msgid "找回密码表单"
-msgstr "Lost Password Form"
+msgstr "Password Reset Form"
 
 msgid "浅色"
 msgstr "Light"
@@ -57,7 +57,73 @@ msgid "拼图验证"
 msgstr "Puzzle Verification"
 
 msgid "旋转验证"
-msgstr "Rotate Verification"
+msgstr "Rotation Verification"
 
 msgid "文字验证"
 msgstr "Text Verification"
+
+msgid "验证码"
+msgstr "Verification Code"
+
+msgid "验证中..."
+msgstr "Verifying..."
+
+msgid "验证成功"
+msgstr "Verification Successful"
+
+msgid "验证失败"
+msgstr "Verification Failed"
+
+msgid "加载中..."
+msgstr "Loading..."
+
+msgid "联系表单"
+msgstr "Contact Form"
+
+msgid "密码重置表单"
+msgstr "Password Reset Form"
+
+msgid "评论"
+msgstr "Comment"
+
+msgid "登录"
+msgstr "Login"
+
+msgid "注册"
+msgstr "Register"
+
+msgid "WooCommerce 结账"
+msgstr "WooCommerce Checkout"
+
+msgid "WooCommerce 登录"
+msgstr "WooCommerce Login"
+
+msgid "WooCommerce 注册"
+msgstr "WooCommerce Register"
+
+msgid "API Key"
+msgstr "API Key"
+
+msgid "API Secret"
+msgstr "API Secret"
+
+msgid "服务器地址"
+msgstr "Server URL"
+
+msgid "主题"
+msgstr "Theme"
+
+msgid "验证码类型"
+msgstr "Captcha Type"
+
+msgid "启用表单"
+msgstr "Enabled Forms"
+
+msgid "保存设置"
+msgstr "Save Settings"
+
+msgid "插件已激活"
+msgstr "Plugin Activated"
+
+msgid "插件已停用"
+msgstr "Plugin Deactivated"

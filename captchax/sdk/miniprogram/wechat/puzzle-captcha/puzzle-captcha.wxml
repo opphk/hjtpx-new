@@ -1,0 +1,42 @@
+<view class="puzzle-captcha-container">
+  <view class="captcha-wrapper">
+    <view class="captcha-image-area">
+      <image 
+        class="background-image" 
+        src="{{localBackgroundImage || backgroundImage}}" 
+        mode="aspectFill"
+      />
+      
+      <view 
+        class="puzzle-slot"
+        style="left: {{targetPosition.x}}px; top: {{targetPosition.y}}px;"
+      >
+      </view>
+      
+      <view 
+        class="puzzle-piece {{isDragging ? 'dragging' : ''}} {{isSuccess ? 'success' : ''}}"
+        style="left: {{puzzlePosition}}px; top: {{targetPosition.y}}px;"
+        bindtouchstart="onPuzzleTouchStart"
+        bindtouchmove="onPuzzleTouchMove"
+        bindtouchend="onPuzzleTouchEnd"
+      >
+        <image 
+          class="puzzle-image" 
+          src="{{localPuzzleImage || puzzleImage}}" 
+          mode="aspectFit"
+        />
+      </view>
+    </view>
+  </view>
+  
+  <view class="puzzle-instruction">
+    <text>拖动滑块将拼图放入正确位置</text>
+  </view>
+  
+  <view class="puzzle-actions">
+    <button 
+      class="refresh-btn"
+      bindtap="reset"
+    >刷新验证码</button>
+  </view>
+</view>

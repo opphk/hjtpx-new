@@ -1,0 +1,40 @@
+<?php
+/**
+ * Customer Login Captcha Template
+ * 
+ * @var \CaptchaX\Captcha\Block\Captcha $block
+ */
+$config = $block->getWidgetConfig();
+?>
+<?php if ($block->isEnabled() && $block->isFormEnabled('customerLogin')): ?>
+<div class="captchax-login-wrapper">
+    <div class="captcha-label">
+        <label for="captcha_token_login"><?= $escaper->escapeHtml(__('Verification')) ?></label>
+    </div>
+    <div id="captchax-login-container" 
+         class="captchax-widget"
+         data-site-key="<?= $escaper->escapeHtml($config['siteKey']) ?>"
+         data-api-url="<?= $escaper->escapeHtml($config['apiUrl']) ?>"
+         data-captcha-type="<?= $escaper->escapeHtml($config['defaultType']) ?>">
+    </div>
+    <input type="hidden" 
+           name="captcha_token" 
+           id="captcha_token_login" 
+           value="" />
+</div>
+
+<script>
+    require([
+        'jquery',
+        'CaptchaX_Captcha/js/captchax'
+    ], function ($, CaptchaX) {
+        'use strict';
+        
+        var config = <?= json_encode($config) ?>;
+        
+        $(document).ready(function() {
+            CaptchaX.init(config);
+        });
+    });
+</script>
+<?php endif; ?>

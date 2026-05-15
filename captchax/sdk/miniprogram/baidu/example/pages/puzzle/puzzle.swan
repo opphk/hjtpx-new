@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="demo-title">拼图验证</view>
+  <view class="demo-desc">将打乱的拼图块拖动到正确位置</view>
+
+  <view class="demo-card">
+    <view class="demo-header">
+      <text class="demo-type">Puzzle Captcha</text>
+      <text class="demo-badge">拼图</text>
+    </view>
+
+    <captcha
+      id="captcha"
+      appId="{{appId}}"
+      type="puzzle"
+      bind:onVerify="onVerify"
+      bind:onClose="onCaptchaClose"
+      bind:onError="onCaptchaError"
+    />
+
+    <button class="demo-btn" bindtap="showCaptcha">
+      唤起拼图验证
+    </button>
+
+    <view wx:if="{{verifyResult}}" class="demo-result result-{{resultType}}">
+      <text>{{verifyResult}}</text>
+    </view>
+  </view>
+</view>

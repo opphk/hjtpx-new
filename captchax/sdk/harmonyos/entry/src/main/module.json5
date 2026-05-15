@@ -1,0 +1,18 @@
+{
+  "app": {
+    "bundleName": "com.captchax.demo",
+    "vendor": "CaptchaX",
+    "versionCode": 1000000,
+    "versionName": "1.0.0"
+  },
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "deviceTypes": [
+      "phone",
+      "tablet"
+    ],
+    "deliveryWithInstall": true,
+    "pages": "$profile:main_pages"
+  }
+}

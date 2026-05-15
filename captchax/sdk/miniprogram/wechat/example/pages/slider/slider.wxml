@@ -1,0 +1,36 @@
+<view class="slider-page">
+  <view class="page-header">
+    <text class="page-title">滑块验证码</text>
+    <text class="page-desc">拖动滑块完成拼图验证</text>
+  </view>
+
+  <view class="captcha-wrapper">
+    <view wx:if="{{isLoading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+
+    <view wx:elif="{{captchaData}}" class="captcha-container">
+      <slider-captcha
+        captchaId="{{captchaData.captchaId}}"
+        backgroundImage="{{captchaData.backgroundImage}}"
+        sliderImage="{{captchaData.sliderImage}}"
+        targetPosition="{{captchaData.targetPosition}}"
+        sliderSize="{{captchaData.sliderSize}}"
+        trackLength="{{300}}"
+        bindverify="onVerify"
+      />
+    </view>
+  </view>
+
+  <view class="action-buttons">
+    <button class="refresh-btn" bindtap="onRefresh">
+      刷新验证码
+    </button>
+  </view>
+
+  <view class="result-panel" wx:if="{{isVerified}}">
+    <text class="result-text {{verifyResult ? 'success' : 'fail'}}">
+      {{verifyResult ? '✓ 验证成功' : '✗ 验证失败'}}
+    </text>
+  </view>
+</view>

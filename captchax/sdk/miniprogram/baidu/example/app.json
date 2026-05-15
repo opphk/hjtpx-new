@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/slider/slider",
+    "pages/click/click",
+    "pages/puzzle/puzzle",
+    "pages/rotate/rotate",
+    "pages/text/text",
+    "pages/icon/icon"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTitleText": "CaptchaX 验证码示例",
+    "navigationBarBackgroundColor": "#1890ff",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f5"
+  }
+}

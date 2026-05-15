@@ -1,50 +1,103 @@
-import { ref, readonly } from 'vue';
+import { ref, reactive, readonly, computed } from 'vue';
+import type { UseCaptchaStateReturn } from '../../types';
 
-const state = {
-  isVisible: ref(false),
-  isLoading: ref(false),
-  token: ref<string | null>(null),
-  error: ref<Error | null>(null)
-};
+interface CaptchaStateInternal {
+  isVisible: boolean;
+  isLoading: boolean;
+  isVerified: boolean;
+  token: string | null;
+  error: Error | null;
+  attempts: number;
+}
 
-export const useCaptchaState = () => {
+const createInitialState = (): CaptchaStateInternal => ({
+  isVisible: false,
+  isLoading: false,
+  isVerified: false,
+  token: null,
+  error: null,
+  attempts: 0
+});
+
+const state = reactive<CaptchaStateInternal>(createInitialState());
+
+export const useCaptchaState = (): UseCaptchaStateReturn => {
   const show = () => {
-    state.isVisible.value = true;
-    state.error.value = null;
+    state.isVisible = true;
+    state.error = null;
   };
   
   const hide = () => {
-    state.isVisible.value = false;
+    state.isVisible = false;
   };
   
   const setLoading = (loading: boolean) => {
-    state.isLoading.value = loading;
+    state.isLoading = loading;
   };
   
-  const setToken = (token: string) => {
-    state.token.value = token;
+  const setVerified = (verified: boolean) => {
+    state.isVerified = verified;
+    if (verified) {
+      state.isVisible = false;
+    }
   };
   
-  const setError = (error: Error) => {
-    state.error.value = error;
+  const setToken = (token: string | null) => {
+    state.token = token;
+  };
+  
+  const setError = (error: Error | null) => {
+    state.error = error;
+  };
+  
+  const setAttempts = (attempts: number) => {
+    state.attempts = attempts;
+  };
+  
+  const incrementAttempts = () => {
+    state.attempts += 1;
   };
   
   const reset = () => {
-    state.token.value = null;
-    state.error.value = null;
-    state.isLoading.value = false;
+    state.token = null;
+    state.error = null;
+    state.isLoading = false;
+    state.isVerified = false;
+    state.isVisible = false;
+    state.attempts = 0;
   };
+  
+  const isValidToken = computed(() => {
+    if (!state.token) return false;
+    
+    try {
+      const parts = state.token.split('_');
+      if (parts.length >= 3) {
+        const timestamp = parseInt(parts[2], 10);
+        const expiryTime = 5 * 60 * 1000;
+        return Date.now() - timestamp < expiryTime;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  });
   
   return {
     show,
     hide,
     setLoading,
+    setVerified,
     setToken,
     setError,
+    setAttempts,
+    incrementAttempts,
     reset,
-    isVisible: readonly(state.isVisible),
-    isLoading: readonly(state.isLoading),
-    token: readonly(state.token),
-    error: readonly(state.error)
+    isVisible: readonly(ref(state.isVisible)),
+    isLoading: readonly(ref(state.isLoading)),
+    isVerified: readonly(ref(state.isVerified)),
+    token: readonly(ref(state.token)),
+    error: readonly(ref(state.error)),
+    attempts: readonly(ref(state.attempts))
   };
 };

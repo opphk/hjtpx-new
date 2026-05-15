@@ -1,0 +1,177 @@
+# Copyright (C) 2024 CaptchaX Team
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: CaptchaX 1.1.0\n"
+"Report-Msgid-Bugs-To: https://captchax.com/support\n"
+"POT-Creation-Date: 2024-01-15 00:00:00+0000\n"
+"PO-Revision-Date: 2024-01-15 00:00:00+0000\n"
+"Last-Translator: CaptchaX Team <support@captchax.com>\n"
+"Language-Team: English\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "请先完成验证"
+msgstr "Please complete the verification first"
+
+msgid "请完成验证码"
+msgstr "Please complete the captcha"
+
+msgid "验证码验证失败"
+msgstr "Captcha verification failed"
+
+msgid "设置已保存"
+msgstr "Settings saved"
+
+msgid "CaptchaX 设置"
+msgstr "CaptchaX Settings"
+
+msgid "评论表单"
+msgstr "Comment Form"
+
+msgid "登录表单"
+msgstr "Login Form"
+
+msgid "注册表单"
+msgstr "Registration Form"
+
+msgid "找回密码表单"
+msgstr "Password Reset Form"
+
+msgid "浅色"
+msgstr "Light"
+
+msgid "深色"
+msgstr "Dark"
+
+msgid "滑块验证"
+msgstr "Slider Verification"
+
+msgid "点选验证"
+msgstr "Click Verification"
+
+msgid "拼图验证"
+msgstr "Puzzle Verification"
+
+msgid "旋转验证"
+msgstr "Rotation Verification"
+
+msgid "文字验证"
+msgstr "Text Verification"
+
+msgid "验证码"
+msgstr "Verification Code"
+
+msgid "验证中..."
+msgstr "Verifying..."
+
+msgid "验证成功"
+msgstr "Verification Successful"
+
+msgid "验证失败"
+msgstr "Verification Failed"
+
+msgid "加载中..."
+msgstr "Loading..."
+
+msgid "联系表单"
+msgstr "Contact Form"
+
+msgid "密码重置表单"
+msgstr "Password Reset Form"
+
+msgid "评论"
+msgstr "Comment"
+
+msgid "登录"
+msgstr "Login"
+
+msgid "注册"
+msgstr "Register"
+
+msgid "WooCommerce 结账"
+msgstr "WooCommerce Checkout"
+
+msgid "WooCommerce 登录"
+msgstr "WooCommerce Login"
+
+msgid "WooCommerce 注册"
+msgstr "WooCommerce Register"
+
+msgid "API Key"
+msgstr "API Key"
+
+msgid "API Secret"
+msgstr "API Secret"
+
+msgid "服务器地址"
+msgstr "Server URL"
+
+msgid "主题"
+msgstr "Theme"
+
+msgid "验证码类型"
+msgstr "Captcha Type"
+
+msgid "启用表单"
+msgstr "Enabled Forms"
+
+msgid "保存设置"
+msgstr "Save Settings"
+
+msgid "插件已激活"
+msgstr "Plugin Activated"
+
+msgid "插件已停用"
+msgstr "Plugin Deactivated"
+
+msgid "CaptchaX - 行为验证码"
+msgstr "CaptchaX - Behavior Verification"
+
+msgid "CaptchaX 现代化行为验证码系统，支持滑块、点选、拼图等多种验证方式，全面保护 WordPress 网站安全"
+msgstr "CaptchaX modern behavior verification system, supports slider, click, puzzle and other verification methods, comprehensively protects WordPress website security"
+
+msgid "常规设置"
+msgstr "General Settings"
+
+msgid "启用验证"
+msgstr "Enable Verification"
+
+msgid "已登录用户跳过验证"
+msgstr "Skip verification for logged-in users"
+
+msgid "语言设置"
+msgstr "Language Settings"
+
+msgid "错误消息"
+msgstr "Error Message"
+
+msgid "验证失败消息"
+msgstr "Verification Failed Message"
+
+msgid "WooCommerce 设置"
+msgstr "WooCommerce Settings"
+
+msgid "联系表单设置"
+msgstr "Contact Form Settings"
+
+msgid "开发环境"
+msgstr "Development Environment"
+
+msgid "生产环境"
+msgstr "Production Environment"
+
+msgid "测试连接"
+msgstr "Test Connection"
+
+msgid "连接成功"
+msgstr "Connection Successful"
+
+msgid "连接失败"
+msgstr "Connection Failed"
+
+msgid "重置密码表单"
+msgstr "Reset Password Form"

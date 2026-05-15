@@ -1,0 +1,49 @@
+scopes = "read_products, write_products, read_script_tags, write_script_tags"
+
+[app_proxy]
+url = "https://captchax.example.com"
+subpath = "apps/captchax"
+prefix = "apps"
+
+[webhooks]
+api_version = "2023-10"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/webhooks/app-uninstalled"
+
+[[webhooks.subscriptions]]
+topics = ["shop/update"]
+uri = "/webhooks/shop-update"
+
+[pos]
+embedded = false
+
+[app_home]
+title = "CaptchaX 验证码管理"
+viewport_path = "index.html"
+
+[app_studio]
+dashboard_url = "https://apps.shopify.com/captchax"
+
+[[extensions]]
+type = "ui_extension"
+name = "captchax-admin"
+handle = "captchax-admin"
+url = "dist/ui-extension/index.html"
+[[extensions.assets]]
+handle = "main"
+src = "dist/ui-extension/assets/main.js"
+[[extensions.assets]]
+handle = "styles"
+src = "dist/ui-extension/assets/styles.css"
+
+[[extensions]]
+type = "function"
+name = "captchax-verify"
+handle = "captchax-verify"
+api_version = "2023-10"
+build_path = "dist/function.wasm"
+
+[configuration]
+catalog = ["captchax.config.js"]

@@ -1,8 +1,132 @@
 .captchax-container {
     margin: 15px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-width: 400px;
 }
 
-.captchax-container .captchax-error {
-    font-size: 12px;
-    margin-top: 5px;
+.captchax-container::before {
+    content: '';
+    display: table;
+}
+
+.captchax-container::after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+.captchax-woo-container {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    max-width: 100%;
+}
+
+.captchax-error {
+    color: #dc3232;
+    font-size: 14px;
+    margin: 10px 0 0 0;
+    padding: 8px 12px;
+    background: #fef7f7;
+    border-left: 3px solid #dc3232;
+    border-radius: 3px;
+}
+
+.captchax-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: captchax-spin 1s linear infinite;
+}
+
+@keyframes captchax-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#captchax-element {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#captchax-element.loading {
+    position: relative;
+}
+
+#captchax-element.loading::after {
+    content: '加载中...';
+    color: #666;
+    font-size: 14px;
+}
+
+.captchax-container.theme-dark {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+.captchax-container.theme-dark .captchax-error {
+    background: #3d2d2d;
+    border-left-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+@media screen and (max-width: 600px) {
+    .captchax-container {
+        margin: 10px 0;
+        padding: 10px;
+    }
+    
+    .captchax-error {
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+}
+
+.login-action-lostpassword #captchax-lostpassword-element,
+.login-action-rp #captchax-resetpassword-element {
+    margin: 20px 0;
+}
+
+#loginform #captchax-login-element,
+#registerform #captchax-register-element {
+    margin-bottom: 20px;
+}
+
+.comment-form-comment #captchax-comment-element {
+    margin-top: 15px;
+}
+
+.woocommerce-checkout #captchax-woo_checkout-element {
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.woocommerce-form-login #captchax-woo_login-element,
+.woocommerce-form-register #captchax-woo_register-element {
+    margin: 15px 0;
+}
+
+.captchax-verified {
+    position: relative;
+}
+
+.captchax-verified::after {
+    content: '✓';
+    color: #28a745;
+    font-size: 18px;
+    font-weight: bold;
+    position: absolute;
+    top: 5px;
+    right: 10px;
 }

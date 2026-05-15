@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="demo-title">旋转验证</view>
+  <view class="demo-desc">旋转图片使其与参考图对齐</view>
+
+  <view class="demo-card">
+    <view class="demo-header">
+      <text class="demo-type">Rotate Captcha</text>
+      <text class="demo-badge">旋转</text>
+    </view>
+
+    <captcha
+      id="captcha"
+      appId="{{appId}}"
+      type="rotate"
+      bind:onVerify="onVerify"
+      bind:onClose="onCaptchaClose"
+      bind:onError="onCaptchaError"
+    />
+
+    <button class="demo-btn" bindtap="showCaptcha">
+      唤起旋转验证
+    </button>
+
+    <view wx:if="{{verifyResult}}" class="demo-result result-{{resultType}}">
+      <text>{{verifyResult}}</text>
+    </view>
+  </view>
+</view>

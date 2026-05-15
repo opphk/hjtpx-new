@@ -1,0 +1,32 @@
+<view class="icon-captcha">
+  <view class="icon-hint">
+    <text>请选择包含"{{targetIcon}}"的图标</text>
+  </view>
+
+  <view class="icon-grid">
+    <view
+      wx:for="{{iconImages}}"
+      wx:for-item="icon"
+      wx:key="index"
+      class="icon-item {{selectedIcons.includes(icon.id) ? 'selected' : ''}}"
+      bindtap="onIconClick"
+      data-id="{{icon.id}}"
+    >
+      <image src="{{icon.url}}" class="icon-img" mode="aspectFit" />
+      <view wx:if="{{selectedIcons.includes(icon.id)}}" class="icon-check">
+        <text>✓</text>
+      </view>
+    </view>
+  </view>
+
+  <text wx:if="{{error}}" class="icon-error">{{error}}</text>
+
+  <view class="icon-actions">
+    <button size="mini" bindtap="onRefresh">刷新</button>
+    <button size="mini" type="primary" bindtap="onSubmit">提交</button>
+  </view>
+
+  <view wx:if="{{success}}" class="icon-success">
+    <text>验证成功</text>
+  </view>
+</view>

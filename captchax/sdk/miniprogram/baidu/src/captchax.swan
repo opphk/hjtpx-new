@@ -1,0 +1,47 @@
+<view class="captcha-container">
+  <block wx:if="{{visible}}">
+    <view class="captcha-overlay" catchtouchmove="preventTouchMove">
+      <view class="captcha-modal">
+        <view class="captcha-header">
+          <text class="captcha-title">安全验证</text>
+          <view class="captcha-close" bindtap="hide">
+            <text>×</text>
+          </view>
+        </view>
+
+        <view class="captcha-body">
+          <view wx:if="{{loading}}" class="captcha-loading">
+            <text>加载中...</text>
+          </view>
+
+          <view wx:elif="{{error}}" class="captcha-error">
+            <text>{{error}}</text>
+            <view class="error-actions">
+              <button size="mini" bindtap="handleRefresh">重新加载</button>
+            </view>
+          </view>
+
+          <view wx:elif="{{success}}" class="captcha-success">
+            <text>{{tipText}}</text>
+          </view>
+
+          <view wx:else class="captcha-content">
+            <view class="captcha-images">
+              <image src="{{backgroundImage}}" class="captcha-bg" mode="aspectFit" />
+              <slot name="captcha"></slot>
+            </view>
+
+            <view class="captcha-tip">
+              <text>{{tipText}}</text>
+            </view>
+
+            <view class="captcha-actions">
+              <button size="mini" bindtap="handleRefresh">刷新</button>
+              <button size="mini" type="primary" bindtap="hide">关闭</button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

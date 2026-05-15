@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaptchaX 管理后台</title>
+    <link rel="stylesheet" href="https://unpkg.com/@shopify/polaris@11.0.0/build/esm/styles.css">
+    <link rel="stylesheet" href="styles/admin.css">
+</head>
+<body>
+    <div class="admin-app">
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>CaptchaX</h1>
+                    <span class="badge">管理后台</span>
+                </div>
+                <div class="header-actions">
+                    <select id="shop-selector" class="shop-selector">
+                        <option value="">选择店铺</option>
+                    </select>
+                    <button id="refresh-btn" class="btn btn-secondary">刷新</button>
+                    <button id="logout-btn" class="btn btn-outline">退出</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            <nav class="admin-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active">
+                        <a href="#dashboard" data-tab="dashboard">
+                            <span class="nav-icon">📊</span>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#config" data-tab="config">
+                            <span class="nav-icon">⚙️</span>
+                            <span>配置管理</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#captcha-types" data-tab="captcha-types">
+                            <span class="nav-icon">🔐</span>
+                            <span>验证码类型</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#statistics" data-tab="statistics">
+                            <span class="nav-icon">📈</span>
+                            <span>数据统计</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#settings" data-tab="settings">
+                            <span class="nav-icon">🔧</span>
+                            <span>系统设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <main class="admin-main">
+                <div id="dashboard" class="tab-content active">
+                    <h2>仪表盘概览</h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">🔢</div>
+                            <div class="stat-content">
+                                <h3>总验证次数</h3>
+                                <p class="stat-value" id="total-verifications">0</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-content">
+                                <h3>成功率</h3>
+                                <p class="stat-value" id="success-rate">0%</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-content">
+                                <h3>平均响应时间</h3>
+                                <p class="stat-value" id="avg-response-time">0ms</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">🚫</div>
+                            <div class="stat-content">
+                                <h3>拦截恶意请求</h3>
+                                <p class="stat-value" id="blocked-attempts">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-section">
+                        <div class="chart-card">
+                            <h3>验证趋势</h3>
+                            <canvas id="trend-chart"></canvas>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3>按类型分布</h3>
+                            <canvas id="type-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <h3>最近活动</h3>
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>店铺</th>
+                                    <th>类型</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-tbody">
+                                <tr>
+                                    <td colspan="4" class="loading">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="config" class="tab-content">
+                    <h2>配置管理</h2>
+
+                    <div class="config-section">
+                        <h3>页面验证码配置</h3>
+
+                        <div class="config-card">
+                            <div class="config-item">
+                                <div class="config-info">
+                                    <h4>登录页面</h4>
+                                    <p>在客户登录表单添加验证码</p>
+                                </div>
+                                <div class="config-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="config-login" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <select id="config-login-type" class="type-selector">
+                                        <option value="image">图像验证码</option>
+                                        <option value="slider">滑块验证码</option>
+                                        <option value="concat">九宫格验证码</option>
+                                        <option value="grid">网格验证码</option>
+                                        <option value="icon">图标验证码</option>
+                                        <option value="rotate">旋转验证码</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="config-item">
+                                <div class="config-info">
+                                    <h4>注册页面</h4>
+                                    <p>在客户注册表单添加验证码</p>
+                                </div>
+                                <div class="config-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="config-register" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <select id="config-register-type" class="type-selector">
+                                        <option value="slider">滑块验证码</option>
+                                        <option value="image">图像验证码</option>
+                                        <option value="concat">九宫格验证码</option>
+                                        <option value="grid">网格验证码</option>
+                                        <option value="icon">图标验证码</option>
+                                        <option value="rotate">旋转验证码</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="config-item">
+                                <div class="config-info">
+                                    <h4>联系表单</h4>
+                                    <p>在联系页面表单添加验证码</p>
+                                </div>
+                                <div class="config-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="config-contact" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <select id="config-contact-type" class="type-selector">
+                                        <option value="image">图像验证码</option>
+                                        <option value="slider">滑块验证码</option>
+                                        <option value="concat">九宫格验证码</option>
+                                        <option value="grid">网格验证码</option>
+                                        <option value="icon">图标验证码</option>
+                                        <option value="rotate">旋转验证码</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="config-item">
+                                <div class="config-info">
+                                    <h4>评论表单</h4>
+                                    <p>在博客评论表单添加验证码</p>
+                                </div>
+                                <div class="config-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="config-comment" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <select id="config-comment-type" class="type-selector">
+                                        <option value="image">图像验证码</option>
+                                        <option value="slider">滑块验证码</option>
+                                        <option value="concat">九宫格验证码</option>
+                                        <option value="grid">网格验证码</option>
+                                        <option value="icon">图标验证码</option>
+                                        <option value="rotate">旋转验证码</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="config-item">
+                                <div class="config-info">
+                                    <h4>结账页面</h4>
+                                    <p>在结账流程中添加验证码</p>
+                                </div>
+                                <div class="config-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="config-checkout">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <select id="config-checkout-type" class="type-selector">
+                                        <option value="slider">滑块验证码</option>
+                                        <option value="image">图像验证码</option>
+                                        <option value="concat">九宫格验证码</option>
+                                        <option value="grid">网格验证码</option>
+                                        <option value="icon">图标验证码</option>
+                                        <option value="rotate">旋转验证码</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="config-item">
+                                <div class="config-info">
+                                    <h4>密码重置</h4>
+                                    <p>在密码找回表单添加验证码</p>
+                                </div>
+                                <div class="config-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="config-password">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <select id="config-password-type" class="type-selector">
+                                        <option value="image">图像验证码</option>
+                                        <option value="slider">滑块验证码</option>
+                                        <option value="concat">九宫格验证码</option>
+                                        <option value="grid">网格验证码</option>
+                                        <option value="icon">图标验证码</option>
+                                        <option value="rotate">旋转验证码</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-actions">
+                        <button id="save-config-btn" class="btn btn-primary">保存配置</button>
+                        <button id="reset-config-btn" class="btn btn-secondary">重置</button>
+                    </div>
+                </div>
+
+                <div id="captcha-types" class="tab-content">
+                    <h2>验证码类型</h2>
+
+                    <div class="captcha-types-grid">
+                        <div class="captcha-type-card">
+                            <div class="type-icon">🖼️</div>
+                            <h3>图像验证码</h3>
+                            <p>用户需要从多张图像中选择包含指定内容的图像</p>
+                            <span class="type-badge">基础</span>
+                        </div>
+
+                        <div class="captcha-type-card">
+                            <div class="type-icon">🎚️</div>
+                            <h3>滑块验证码</h3>
+                            <p>拖动滑块到正确位置完成拼图验证</p>
+                            <span class="type-badge">常用</span>
+                        </div>
+
+                        <div class="captcha-type-card">
+                            <div class="type-icon">🔲</div>
+                            <h3>九宫格验证码</h3>
+                            <p>按指定顺序点击图像验证</p>
+                            <span class="type-badge">进阶</span>
+                        </div>
+
+                        <div class="captcha-type-card">
+                            <div class="type-icon">📊</div>
+                            <h3>网格验证码</h3>
+                            <p>从网格中选择所有符合条件的多张图像</p>
+                            <span class="type-badge">进阶</span>
+                        </div>
+
+                        <div class="captcha-type-card">
+                            <div class="type-icon">🎯</div>
+                            <h3>图标验证码</h3>
+                            <p>点击所有包含指定图标的图像</p>
+                            <span class="type-badge">高级</span>
+                        </div>
+
+                        <div class="captcha-type-card">
+                            <div class="type-icon">🔄</div>
+                            <h3>旋转验证码</h3>
+                            <p>将图像旋转到正确方向</p>
+                            <span class="type-badge">高级</span>
+                        </div>
+                    </div>
+
+                    <div class="type-comparison">
+                        <h3>类型对比</h3>
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>类型</th>
+                                    <th>安全性</th>
+                                    <th>用户体验</th>
+                                    <th>难度</th>
+                                    <th>适用场景</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>图像验证码</td>
+                                    <td>⭐⭐⭐</td>
+                                    <td>⭐⭐⭐⭐</td>
+                                    <td>低</td>
+                                    <td>通用场景</td>
+                                </tr>
+                                <tr>
+                                    <td>滑块验证码</td>
+                                    <td>⭐⭐⭐⭐</td>
+                                    <td>⭐⭐⭐⭐⭐</td>
+                                    <td>中</td>
+                                    <td>登录、注册</td>
+                                </tr>
+                                <tr>
+                                    <td>九宫格验证码</td>
+                                    <td>⭐⭐⭐⭐</td>
+                                    <td>⭐⭐⭐</td>
+                                    <td>中</td>
+                                    <td>高级验证</td>
+                                </tr>
+                                <tr>
+                                    <td>网格验证码</td>
+                                    <td>⭐⭐⭐⭐⭐</td>
+                                    <td>⭐⭐⭐</td>
+                                    <td>高</td>
+                                    <td>敏感操作</td>
+                                </tr>
+                                <tr>
+                                    <td>图标验证码</td>
+                                    <td>⭐⭐⭐⭐⭐</td>
+                                    <td>⭐⭐⭐⭐</td>
+                                    <td>高</td>
+                                    <td>安全验证</td>
+                                </tr>
+                                <tr>
+                                    <td>旋转验证码</td>
+                                    <td>⭐⭐⭐⭐</td>
+                                    <td>⭐⭐⭐</td>
+                                    <td>中</td>
+                                    <td>交互验证</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="statistics" class="tab-content">
+                    <h2>数据统计</h2>
+
+                    <div class="stats-filters">
+                        <label>
+                            <span>时间范围：</span>
+                            <select id="stats-range">
+                                <option value="7">最近7天</option>
+                                <option value="30" selected>最近30天</option>
+                                <option value="90">最近90天</option>
+                                <option value="365">最近一年</option>
+                            </select>
+                        </label>
+                        <button id="export-stats-btn" class="btn btn-secondary">导出数据</button>
+                    </div>
+
+                    <div class="detailed-stats">
+                        <div class="chart-full">
+                            <h3>验证次数趋势</h3>
+                            <canvas id="detail-trend-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="stats-breakdown">
+                        <div class="breakdown-card">
+                            <h3>按页面类型</h3>
+                            <div id="page-breakdown"></div>
+                        </div>
+
+                        <div class="breakdown-card">
+                            <h3>按验证码类型</h3>
+                            <div id="type-breakdown"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settings" class="tab-content">
+                    <h2>系统设置</h2>
+
+                    <div class="settings-section">
+                        <h3>API 配置</h3>
+
+                        <div class="setting-item">
+                            <label for="api-key">API Key</label>
+                            <input type="text" id="api-key" class="setting-input" placeholder="输入您的 API Key">
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="api-secret">API Secret</label>
+                            <input type="password" id="api-secret" class="setting-input" placeholder="输入您的 API Secret">
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="api-env">环境</label>
+                            <select id="api-env" class="setting-input">
+                                <option value="development">开发环境</option>
+                                <option value="production">生产环境</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>外观设置</h3>
+
+                        <div class="setting-item">
+                            <label for="theme">主题</label>
+                            <select id="theme" class="setting-input">
+                                <option value="light">浅色</option>
+                                <option value="dark">深色</option>
+                                <option value="auto">自动</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="language">语言</label>
+                            <select id="language" class="setting-input">
+                                <option value="zh-CN">简体中文</option>
+                                <option value="zh-TW">繁体中文</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="position">位置</label>
+                            <select id="position" class="setting-input">
+                                <option value="bottom-right">右下角</option>
+                                <option value="bottom-left">左下角</option>
+                                <option value="top-right">右上角</option>
+                                <option value="top-left">左上角</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>高级设置</h3>
+
+                        <div class="setting-item">
+                            <label for="timeout">超时时间 (毫秒)</label>
+                            <input type="number" id="timeout" class="setting-input" value="300000" min="60000">
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="retry-attempts">重试次数</label>
+                            <input type="number" id="retry-attempts" class="setting-input" value="3" min="1" max="10">
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="log-level">日志级别</label>
+                            <select id="log-level" class="setting-input">
+                                <option value="debug">调试</option>
+                                <option value="info" selected>信息</option>
+                                <option value="warn">警告</option>
+                                <option value="error">错误</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button id="save-settings-btn" class="btn btn-primary">保存设置</button>
+                        <button id="test-api-btn" class="btn btn-secondary">测试连接</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="scripts/admin.js"></script>
+</body>
+</html>

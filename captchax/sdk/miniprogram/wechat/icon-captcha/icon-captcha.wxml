@@ -1,0 +1,52 @@
+<view class="icon-captcha-container">
+  <view class="instruction">请选择正确的图标</view>
+  
+  <view class="image-section">
+    <image 
+      class="captcha-image"
+      src="{{localImageUrl || imageUrl}}"
+      mode="aspectFit"
+    />
+  </view>
+  
+  <view class="icons-section">
+    <view class="icons-grid">
+      <block wx:for="{{localIcons.length > 0 ? localIcons : icons}}" wx:key="index">
+        <view 
+          class="icon-item {{selectedIcon === item ? 'selected' : ''}} {{isVerified ? (item === selectedIcon ? (verifyResult ? 'correct' : 'wrong') : (item === targetIcon ? 'target' : '')) : ''}}"
+          bindtap="onIconSelect"
+          data-icon="{{item}}"
+        >
+          <image 
+            class="icon-image"
+            src="{{item}}"
+            mode="aspectFit"
+          />
+          <view wx:if="{{isVerified && item === selectedIcon}}" class="icon-result">
+            <text wx:if="{{verifyResult}}">✓</text>
+            <text wx:else>✗</text>
+          </view>
+          <view wx:if="{{isVerified && item === targetIcon && item !== selectedIcon}}" class="target-mark">
+            <text>目标</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+  
+  <view class="action-section">
+    <button 
+      class="submit-btn {{selectedIcon ? 'active' : ''}}"
+      bindtap="submitSelection"
+      disabled="{{!selectedIcon || isVerified}}"
+    >
+      {{isVerified ? (verifyResult ? '验证成功' : '验证失败') : '确认选择'}}
+    </button>
+    <button 
+      class="refresh-btn"
+      bindtap="refresh"
+    >
+      换一组
+    </button>
+  </view>
+</view>

@@ -1,0 +1,52 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "CaptchaX SDK"
+    },
+    {
+      "name": "captcha_title",
+      "value": "验证码"
+    },
+    {
+      "name": "slider_captcha",
+      "value": "滑块验证"
+    },
+    {
+      "name": "click_captcha",
+      "value": "点选验证"
+    },
+    {
+      "name": "puzzle_captcha",
+      "value": "拼图验证"
+    },
+    {
+      "name": "rotate_captcha",
+      "value": "旋转验证"
+    },
+    {
+      "name": "text_captcha",
+      "value": "文字验证"
+    },
+    {
+      "name": "icon_captcha",
+      "value": "图标验证"
+    },
+    {
+      "name": "verify_success",
+      "value": "验证成功"
+    },
+    {
+      "name": "verify_failed",
+      "value": "验证失败"
+    },
+    {
+      "name": "refresh",
+      "value": "刷新"
+    },
+    {
+      "name": "loading",
+      "value": "加载中..."
+    }
+  ]
+}

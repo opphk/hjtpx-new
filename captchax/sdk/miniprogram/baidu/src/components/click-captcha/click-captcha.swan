@@ -1,0 +1,24 @@
+<view class="click-captcha">
+  <view class="click-area">
+    <image
+      src="{{backgroundImage}}"
+      class="click-bg"
+      mode="aspectFit"
+      bindclick="onImageClick"
+    />
+
+    <view wx:for="{{points}}" wx:for-item="point" wx:key="index" class="click-point" style="left: {{point.x}}px; top: {{point.y}}px;">
+      <view class="point-marker">
+        <text>{{index + 1}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="click-hint">
+    <text>请依次点击图中{{maxClicks}}个目标位置 ({{clickCount}}/{{maxClicks}})</text>
+  </view>
+
+  <view class="click-actions">
+    <button size="mini" bindtap="resetClicks">重置</button>
+  </view>
+</view>
