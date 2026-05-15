@@ -53,14 +53,14 @@ async function createConnection(userId) {
 
     socket.on('connect_error', (error) => {
       errorCount++;
-      console.error(chalk.red(`连接 ${userId} 失败: '), error.message);
+      console.error(chalk.red(`连接 ${userId} 失败: `), error.message);
       resolve({ success: false, error: error.message });
     });
 
     socket.on('error', (error) => {
-      console.error(chalk.red(`连接 ${userId} 错误: '), error.message);
+      console.error(chalk.red(`连接 ${userId} 错误: `), error.message);
     });
-  };
+  });
 }
 
 async function runConnectionBatch(startIndex, count) {

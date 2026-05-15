@@ -1,90 +1,100 @@
-# HJTPX WebSocket 压力测试
+# HJTPX WebSocket Stress Testing
 
-## 概述
+## Overview
 
-此目录包含了用于测试 HJTPX WebSocket 服务性能的脚本和工具。
+This directory contains scripts and tools for testing the HJTPX WebSocket service performance under load.
 
-## 文件说明
+## File Description
 
-- `package.json` - 测试脚本的依赖配置
-- `test-connections.js` - 并发连接压力测试脚本
-- `test-broadcast.js` - 消息广播性能测试脚本
-- `test-monitor.js` - 监控测试脚本
+- `package.json` - Test script dependencies configuration
+- `test-connections.js` - Concurrent connection stress test script
+- `test-broadcast.js` - Message broadcast performance test script
+- `test-monitor.js` - Monitoring test script
 
-## 安装依赖
+## Installation
 
 ```bash
 cd tests/websocket
 npm install
 ```
 
-## 使用方法
+## Usage
 
-### 1. 启动主服务器
+### 1. Start the Main Server
 
-在项目根目录下运行：
+Run in the project root directory:
 
 ```bash
 npm start
 ```
 
-### 2. 并发连接压力测试
+### 2. Concurrent Connection Stress Test
 
 ```bash
 cd tests/websocket
 node test-connections.js
 ```
 
-该测试会：
-- 尝试建立大量并发连接
-- 测量连接成功率和连接时间
-- 保持连接一段时间后断开
-- 输出详细的测试结果
+This test will:
+- Establish a large number of concurrent connections
+- Measure connection success rate and connection time
+- Keep connections for a period before disconnecting
+- Output detailed test results including latency percentiles (P50, P95, P99)
 
-**配置项**（在 `test-connections.js` 中修改）：
-- `TOTAL_CONNECTIONS` - 总连接数（默认：100）
-- `CONNECTIONS_PER_BATCH` - 每批连接数（默认：20）
-- `BATCH_DELAY` - 批次间隔（毫秒，默认：500）
-- `STAY_CONNECTED_TIME` - 保持连接时间（毫秒，默认：30000）
+**Configuration Options** (modify in `test-connections.js`):
+- `TOTAL_CONNECTIONS` - Total number of connections (default: 100)
+- `CONNECTIONS_PER_BATCH` - Connections per batch (default: 20)
+- `BATCH_DELAY` - Batch interval (ms, default: 500)
+- `STAY_CONNECTED_TIME` - Connection duration (ms, default: 30000)
+- `USE_NATIVE_WS` - Use native WebSocket library (default: false)
 
-### 3. 广播性能测试
+### 3. Broadcast Performance Test
 
 ```bash
 cd tests/websocket
 node test-broadcast.js
 ```
 
-该测试会：
-- 创建多个连接
-- 发送多条广播消息
-- 测量消息接收成功率和吞吐量
+This test will:
+- Create multiple connections
+- Send multiple broadcast messages
+- Measure message delivery success rate and throughput
+- Calculate latency metrics (avg, min, max, P50, P95, P99)
 
-**配置项**（在 `test-broadcast.js` 中修改）：
-- `TOTAL_CLIENTS` - 客户端数量（默认：50）
-- `MESSAGES_PER_TEST` - 发送消息数（默认：100）
-- `MESSAGE_INTERVAL` - 消息间隔（毫秒，默认：100）
+**Configuration Options** (modify in `test-broadcast.js`):
+- `TOTAL_CLIENTS` - Number of clients (default: 50)
+- `MESSAGES_PER_TEST` - Number of messages to send (default: 100)
+- `MESSAGE_INTERVAL` - Message interval (ms, default: 100)
+- `MESSAGE_SIZE` - Message size in bytes (default: 1024)
+- `ENABLE_DELAY_MEASUREMENT` - Enable latency measurement (default: true)
 
-### 4. 监控测试
+### 4. Monitoring Test
 
 ```bash
 cd tests/websocket
 node test-monitor.js
 ```
 
-该测试会：
-- 连接到服务器
-- 监控内存使用情况
-- 运行一段时间后输出统计数据
+This test will:
+- Connect to the server
+- Monitor memory usage and network statistics
+- Request server metrics periodically
+- Output comprehensive monitoring statistics
 
-## API 监控端点
+**Configuration Options** (modify in `test-monitor.js`):
+- `TEST_DURATION` - Test duration in ms (default: 60000)
+- `UPDATE_INTERVAL` - Statistics update interval (ms, default: 5000)
+- `METRICS_INTERVAL` - Server metrics request interval (ms, default: 10000)
 
-### 获取 WebSocket 详细指标
+## API Monitoring Endpoints
+
+### Get WebSocket Detailed Metrics
 
 ```
 GET /api/v1/monitoring/websocket
 ```
 
-响应示例：
+Response Example:
 ```json
 {
   "success": true,
@@ -101,26 +111,99 @@ GET /api/v1/monitoring/websocket
     "rooms": ["room1", "room2"],
     "subscriptions": [
       {"channel": "channel1", "subscriberCount": 3}
-    ]
+    ],
+    "heartbeatMetrics": {
+      "heartbeatsSent": 1000,
+      "heartbeatsReceived": 995,
+      "missedHeartbeats": 5,
+      "activeHeartbeats": 10,
+      "config": {
+        "pingTimeout": 30000,
+        "pingInterval": 15000,
+        "heartbeatCheckInterval": 5000,
+        "maxMissedHeartbeats": 3
+      }
+    }
   }
 }
 ```
 
-### 获取基本统计信息
+### Get WebSocket Health Status
+
+```
+GET /api/v1/monitoring/websocket/health
+```
+
+Response Example:
+```json
+{
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "uptime": 3600000,
+    "currentConnections": 10,
+    "errorRate": "2.50",
+    "heartbeatStatus": {
+      "heartbeatsSent": 1000,
+      "heartbeatsReceived": 995,
+      "missedHeartbeats": 5,
+      "activeHeartbeats": 10,
+      "config": {...}
+    }
+  }
+}
+```
+
+### Get WebSocket Performance Metrics
+
+```
+GET /api/v1/monitoring/websocket/performance
+```
+
+Response Example:
+```json
+{
+  "success": true,
+  "data": {
+    "throughput": {
+      "messagesPerSecond": 50.5,
+      "connectionsPerSecond": 2.3
+    },
+    "latency": {
+      "avgMessageLatency": "1.25"
+    },
+    "reliability": {
+      "totalMessages": 500,
+      "totalReceived": 480,
+      "messageDeliveryRate": "96.00",
+      "errorCount": 5
+    },
+    "heartbeat": {...}
+  }
+}
+```
+
+### Get Basic Statistics
 
 ```
 GET /api/v1/monitoring/websocket/stats
 ```
 
-### 获取在线用户
+### Get Online Users
 
 ```
 GET /api/v1/monitoring/websocket/online-users
 ```
 
-## WebSocket 事件
+### Get Prometheus Metrics
 
-### 获取指标（客户端）
+```
+GET /api/v1/monitoring/metrics
+```
+
+## WebSocket Events
+
+### Get Metrics (Client-side)
 
 ```javascript
 socket.emit('get:metrics', (response) => {
@@ -128,18 +211,84 @@ socket.emit('get:metrics', (response) => {
 });
 ```
 
-## 性能优化说明
+## Performance Optimization
 
-### 心跳机制优化
-- pingTimeout: 30秒（原60秒）
-- pingInterval: 15秒（原25秒）
-- 更快的连接状态检测
+### Heartbeat Mechanism Optimization
+- pingTimeout: 30 seconds (optimized from 60s)
+- pingInterval: 15 seconds (optimized from 25s)
+- Configurable via environment variables:
+  - `WS_PING_TIMEOUT`
+  - `WS_PING_INTERVAL`
+  - `WS_HEARTBEAT_CHECK_INTERVAL`
+  - `WS_MAX_MISSED_HEARTBEATS`
+- Faster connection state detection
 
-### 消息压缩
-- 启用 perMessageDeflate 压缩
-- 阈值设置为 1KB
-- 减少网络带宽消耗
+### Message Compression
+- Enabled perMessageDeflate compression
+- Threshold set to 1KB
+- Reduces network bandwidth consumption
 
-### 缓冲区大小
+### Buffer Size
 - maxHttpBufferSize: 10MB
-- 支持更大的消息传输
+- Supports larger message transmission
+
+## Monitoring Capabilities
+
+### Real-time Metrics
+- Connection count and status
+- Message throughput (sent/received)
+- Error tracking
+- Heartbeat monitoring
+- Memory usage
+- Network statistics
+
+### Performance Indicators
+- Latency percentiles (P50, P95, P99)
+- Message delivery rate
+- Connection success rate
+- System resource utilization
+
+### Health Checks
+- Automatic health status evaluation
+- Error rate threshold monitoring
+- Heartbeat health validation
+
+## Test Scripts
+
+### Run All Tests
+
+```bash
+cd tests/websocket
+npm run test:all
+```
+
+### Run Stress Test Suite
+
+```bash
+cd tests/websocket
+npm run test:stress
+```
+
+This will execute:
+1. Connection stress test
+2. Broadcast performance test
+3. Monitoring test
+
+## Environment Variables
+
+The WebSocket server supports the following environment variables:
+
+```bash
+WS_PING_TIMEOUT=30000
+WS_PING_INTERVAL=15000
+WS_HEARTBEAT_CHECK_INTERVAL=5000
+WS_MAX_MISSED_HEARTBEATS=3
+```
+
+## Performance Best Practices
+
+1. **Connection Pooling**: Use batch connections to avoid overwhelming the server
+2. **Message Batching**: Send messages in batches for better throughput
+3. **Heartbeat Tuning**: Adjust heartbeat intervals based on your network conditions
+4. **Compression**: Enable compression for large messages to reduce bandwidth
+5. **Monitoring**: Regular monitoring helps identify bottlenecks early

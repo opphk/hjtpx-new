@@ -5,14 +5,21 @@ const { logger } = require('../middleware/logger');
 
 class WebSocketServer {
   constructor(httpServer) {
+    this.heartbeatConfig = {
+      pingTimeout: parseInt(process.env.WS_PING_TIMEOUT) || 30000,
+      pingInterval: parseInt(process.env.WS_PING_INTERVAL) || 15000,
+      heartbeatCheckInterval: parseInt(process.env.WS_HEARTBEAT_CHECK_INTERVAL) || 5000,
+      maxMissedHeartbeats: parseInt(process.env.WS_MAX_MISSED_HEARTBEATS) || 3
+    };
+
     this.io = new Server(httpServer, {
       cors: {
         origin: process.env.CORS_ORIGIN || '*',
         methods: ['GET', 'POST'],
         credentials: true
       },
-      pingTimeout: 30000,
-      pingInterval: 15000,
+      pingTimeout: this.heartbeatConfig.pingTimeout,
+      pingInterval: this.heartbeatConfig.pingInterval,
       transports: ['websocket', 'polling'],
       maxHttpBufferSize: 1e7,
       perMessageDeflate: {
@@ -28,6 +35,7 @@ class WebSocketServer {
 
     this.connectedClients = new Map();
     this.roomSubscriptions = new Map();
+    this.clientHeartbeats = new Map();
     
     this.metrics = {
       totalConnections: 0,
@@ -35,12 +43,85 @@ class WebSocketServer {
       messagesSent: 0,
       messagesReceived: 0,
       errors: 0,
+      heartbeatsSent: 0,
+      heartbeatsReceived: 0,
+      missedHeartbeats: 0,
       connectionTimes: [],
       startTime: Date.now()
     };
-    
+
+    this.setupHeartbeatMonitor();
     this.setupMiddleware();
     this.setupEventHandlers();
+  }
+
+  setupHeartbeatMonitor() {
+    this.heartbeatInterval = setInterval(() => {
+      this.checkClientHeartbeats();
+    }, this.heartbeatConfig.heartbeatCheckInterval);
+
+    this.io.on('connection', socket => {
+      this.clientHeartbeats.set(socket.id, {
+        lastPing: Date.now(),
+        missedCount: 0,
+        connectedAt: Date.now()
+      });
+    });
+
+    this.io.engine.on('packet', (packet) => {
+      if (packet.type === 'pong') {
+        const socket = this.findSocketByEngineSocket(this.io.engine);
+        if (socket) {
+          const heartbeat = this.clientHeartbeats.get(socket.id);
+          if (heartbeat) {
+            heartbeat.lastPing = Date.now();
+            heartbeat.missedCount = 0;
+            this.metrics.heartbeatsReceived++;
+          }
+        }
+      }
+    });
+  }
+
+  findSocketByEngineSocket(engine) {
+    for (const [id, socket] of this.io.sockets.sockets) {
+      if (socket.conn && socket.conn.transport) {
+        return socket;
+      }
+    }
+    return null;
+  }
+
+  checkClientHeartbeats() {
+    const now = Date.now();
+    const timeout = this.heartbeatConfig.pingInterval + this.heartbeatConfig.pingTimeout;
+
+    for (const [socketId, heartbeat] of this.clientHeartbeats.entries()) {
+      const timeSinceLastPing = now - heartbeat.lastPing;
+
+      if (timeSinceLastPing > timeout) {
+        heartbeat.missedCount++;
+        this.metrics.missedHeartbeats++;
+
+        if (heartbeat.missedCount >= this.heartbeatConfig.maxMissedHeartbeats) {
+          const socket = this.io.sockets.sockets.get(socketId);
+          if (socket) {
+            logger.warn('Client missed too many heartbeats, disconnecting', {
+              socketId,
+              missedCount: heartbeat.missedCount
+            });
+            socket.disconnect(true);
+          }
+          this.clientHeartbeats.delete(socketId);
+        } else {
+          logger.warn('Client missed heartbeat', {
+            socketId,
+            missedCount: heartbeat.missedCount,
+            timeSinceLastPing
+          });
+        }
+      }
+    }
   }
 
   setupMiddleware() {
@@ -417,6 +498,13 @@ class WebSocketServer {
       messagesSent: this.metrics.messagesSent,
       messagesReceived: this.metrics.messagesReceived,
       errors: this.metrics.errors,
+      heartbeatMetrics: {
+        heartbeatsSent: this.metrics.heartbeatsSent,
+        heartbeatsReceived: this.metrics.heartbeatsReceived,
+        missedHeartbeats: this.metrics.missedHeartbeats,
+        activeHeartbeats: this.clientHeartbeats.size,
+        config: this.heartbeatConfig
+      },
       avgConnectionTime,
       rooms: Array.from(this.roomSubscriptions.keys()),
       subscriptions: Array.from(this.roomSubscriptions.entries()).map(([channel, users]) => ({
@@ -440,6 +528,13 @@ class WebSocketServer {
 
   close() {
     logger.info('Closing WebSocket server');
+    
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+    
+    this.clientHeartbeats.clear();
     this.io.close();
   }
 }
