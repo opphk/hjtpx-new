@@ -76,9 +76,11 @@
     "ws": "^8.20.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.5",
     "@babel/preset-react": "^7.28.5",
     "@playwright/test": "^1.60.0",
+    "@sentry/profiling-node": "^10.53.1",
     "@testing-library/react": "^16.3.2",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^10.1.8",

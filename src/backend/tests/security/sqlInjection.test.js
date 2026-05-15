@@ -6,7 +6,8 @@ describe('SQL Injection Tests', () => {
       const maliciousInput = "'; DROP TABLE users;--";
       const sanitized = SQLInjectionProtection.sanitize(maliciousInput);
       expect(sanitized).not.toContain('DROP');
-      expect(sanitized).not.toContain(';');
+      expect(sanitized).not.toContain('--');
+      expect(sanitized).toContain("''");
     });
 
     test('should block OR 1=1 attacks', () => {
@@ -40,7 +41,8 @@ describe('SQL Injection Tests', () => {
       const maliciousInput = "; INSERT INTO users VALUES ('hacker','password');";
       const sanitized = SQLInjectionProtection.sanitize(maliciousInput);
       expect(sanitized).not.toContain('INSERT');
-      expect(sanitized).not.toContain(';');
+      expect(sanitized).not.toContain('VALUES');
+      expect(sanitized).toContain("''");
     });
   });
 

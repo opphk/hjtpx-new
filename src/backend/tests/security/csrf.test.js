@@ -96,7 +96,7 @@ describe('CSRF Protection Tests', () => {
     test('should accept token from request body', () => {
       const token = CSRFTokenManager.generateToken();
       mockReq.headers = {};
-      mockReq.cookies = {};
+      mockReq.cookies = { _csrf: token };
       mockReq.body = { _csrf: token };
       
       const isValid = CSRFTokenManager.validateToken(mockReq);

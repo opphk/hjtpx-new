@@ -1,13 +1,16 @@
 module.exports = {
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
+  roots: ['<rootDir>/src', '<rootDir>/captchax', '<rootDir>/tests'],
   testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.test.js'],
   collectCoverageFrom: [
     'src/**/*.js',
     'src/**/*.jsx',
+    'captchax/**/*.js',
     '!src/**/*.test.js',
+    '!captchax/**/*.test.js',
     'src/**/__tests__/**',
-    '!src/**/node_modules/**'
+    '!src/**/node_modules/**',
+    '!captchax/**/node_modules/**'
   ],
   transform: {
     '^.+\\.js$': 'babel-jest'
@@ -21,7 +24,12 @@ module.exports = {
     '^src/backend/config/database/db$': '<rootDir>/tests/__mocks__/database.js',
     '^../../config/database/db$': '<rootDir>/tests/__mocks__/database.js',
     '^../config/database/db$': '<rootDir>/tests/__mocks__/database.js',
-    '^../../../config/database/db$': '<rootDir>/tests/__mocks__/database.js'
+    '^../../../config/database/db$': '<rootDir>/tests/__mocks__/database.js',
+    '^config/redis/client$': '<rootDir>/src/config/redis/client.js',
+    '^src/config/redis/client$': '<rootDir>/src/config/redis/client.js',
+    '^../../../config/redis/client$': '<rootDir>/src/config/redis/client.js',
+    '^../../config/redis/client$': '<rootDir>/src/config/redis/client.js',
+    '^../config/redis/client$': '<rootDir>/src/config/redis/client.js'
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   clearMocks: true,
