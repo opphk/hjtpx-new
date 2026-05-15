@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   roots: ['<rootDir>/src', '<rootDir>/captchax', '<rootDir>/tests'],
   testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.test.js'],
   collectCoverageFrom: [
@@ -13,7 +13,7 @@ module.exports = {
     '!captchax/**/node_modules/**'
   ],
   transform: {
-    '^.+\\.js$': 'babel-jest'
+    '^.+\\.(js|jsx)$': 'babel-jest'
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
