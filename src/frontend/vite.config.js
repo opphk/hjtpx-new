@@ -15,12 +15,20 @@ export default defineConfig({
     algorithm: 'gzip',
     ext: '.gz',
     threshold: 1024,
-    deleteOriginFile: false
+    deleteOriginFile: false,
+    compressionOptions: {
+      level: 9
+    }
   }), viteCompression({
     algorithm: 'brotliCompress',
     ext: '.br',
     threshold: 1024,
-    deleteOriginFile: false
+    deleteOriginFile: false,
+    compressionOptions: {
+      params: {
+        [2]: 11
+      }
+    }
   }), visualizer({
     filename: 'dist/stats.html',
     open: false,
@@ -63,35 +71,59 @@ export default defineConfig({
             if (id.includes('papaparse')) {
               return 'vendor-csv';
             }
+            if (id.includes('prop-types') || id.includes('warning')) {
+              return 'vendor-polyfills';
+            }
+            if (id.includes('@vitejs') || id.includes('vite')) {
+              return 'vendor-build';
+            }
             return 'vendor-misc';
+          }
+          if (id.includes('src/pages')) {
+            const pageName = id.split('pages/')[1]?.replace('.jsx', '') || 'unknown';
+            return `page-${pageName}`;
+          }
+          if (id.includes('src/components')) {
+            const componentName = id.split('components/')[1]?.split('/')[0] || 'common';
+            return `component-${componentName}`;
           }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+        manualImportAssets: true
       }
     },
     terserOptions: {
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-        passes: 2,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.assert'],
+        passes: 3,
         unsafe_arrows: true,
         unsafe_methods: true,
         unsafe_comps: true,
         unsafe_proto: true,
+        unsafe_regexp: true,
+        ecma: 2020,
+        module: true,
+        toplevel: true,
+        arguments: true,
+        dead_code: true,
+        drop_labels: true,
         ecma: 2020
       },
       mangle: {
         safari10: true,
         properties: false,
-        toplevel: true
+        toplevel: true,
+        reserved: ['React', 'ReactDOM']
       },
       format: {
         comments: false,
         ecma: 2020,
-        ascii_only: true
+        ascii_only: true,
+        inline_script: true
       }
     },
     reportCompressedSize: true,
@@ -99,12 +131,15 @@ export default defineConfig({
     assetsInlineLimit: 4096
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'socket.io-client', 'i18next', 'react-i18next', 'date-fns', 'recharts'],
+    include: ['react', 'react-dom', 'react-router-dom', 'socket.io-client', 'i18next', 'react-i18next', 'date-fns', 'recharts', 'papaparse'],
     exclude: [],
     esbuildOptions: {
       target: 'es2020',
-      treeShaking: true
-    }
+      treeShaking: true,
+      keepNames: true
+    },
+    buildCompression: 'gzip',
+    maxConcurrency: 8
   },
   css: {
     devSourcemap: true,
