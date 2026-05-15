@@ -293,19 +293,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Frontend dependencies
+        run: cd src/frontend && npm ci
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E tests
-        run: npm run test:e2e || echo "E2E tests not configured"
+      - name: Run Frontend E2E tests
+        run: cd src/frontend && npm run test:e2e
         continue-on-error: true
 
-      - name: Upload E2E test results
+      - name: Upload Frontend E2E test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-test-results
-          path: test-results/
+          path: src/frontend/test-results/
+          retention-days: 14
+
+      - name: Upload Frontend E2E report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-playwright-report
+          path: src/frontend/playwright-report/
           retention-days: 14
 
   coverage-comment:
