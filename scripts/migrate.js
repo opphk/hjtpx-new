@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 require('dotenv').config();
 
 const DB_HOST = process.env.DB_HOST || 'localhost';
@@ -12,6 +13,39 @@ const DB_PASSWORD = process.env.DB_PASSWORD || 'postgres';
 
 const MIGRATIONS_TABLE = 'migrations';
 const MIGRATIONS_DIR = path.join(__dirname, '../migrations');
+
+const LOG_LEVELS = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3
+};
+
+const currentLogLevel = process.env.MIGRATION_LOG_LEVEL
+  ? LOG_LEVELS[process.env.MIGRATION_LOG_LEVEL.toUpperCase()] || LOG_LEVELS.INFO
+  : LOG_LEVELS.INFO;
+
+function log(level, message, data = null) {
+  if (level >= currentLogLevel) {
+    const timestamp = new Date().toISOString();
+    const levelName = Object.keys(LOG_LEVELS).find(k => LOG_LEVELS[k] === level) || 'INFO';
+    const logMessage = `[${timestamp}] [${levelName}] ${message}`;
+    console.log(logMessage);
+    if (data) {
+      console.log(JSON.stringify(data, null, 2));
+    }
+  }
+}
+
+function getMachineInfo() {
+  return {
+    hostname: os.hostname(),
+    platform: os.platform(),
+    arch: os.arch(),
+    nodeVersion: process.version,
+    pid: process.pid
+  };
+}
 
 /**
  * Calculate checksum of a file for integrity verification
@@ -91,6 +125,58 @@ async function createMigrationsTable(pool) {
       error_message TEXT
     )
   `);
+}
+
+/**
+ * Check database health
+ */
+async function checkDatabaseHealth(pool) {
+  try {
+    const result = await pool.query(`
+      SELECT
+        current_setting('server_version_num') as version_num,
+        current_setting('server_version') as version,
+        (SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()) as active_connections,
+        (SELECT sum(xact_commit) FROM pg_stat_database WHERE datname = current_database()) as total_commits,
+        (SELECT sum(xact_rollback) FROM pg_stat_database WHERE datname = current_database()) as total_rollbacks
+    `);
+
+    const stats = result.rows[0];
+    log(LOG_LEVELS.DEBUG, 'Database health check passed', stats);
+
+    return {
+      healthy: true,
+      version: stats.version,
+      activeConnections: parseInt(stats.active_connections),
+      totalCommits: parseInt(stats.total_commits),
+      totalRollbacks: parseInt(stats.total_rollbacks)
+    };
+  } catch (error) {
+    log(LOG_LEVELS.ERROR, 'Database health check failed', { error: error.message });
+    return {
+      healthy: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Get migration statistics
+ */
+async function getMigrationStats(pool) {
+  const result = await pool.query(`
+    SELECT
+      COUNT(*) FILTER (WHERE type = 'up') as total_migrations,
+      COUNT(*) FILTER (WHERE type = 'up' AND status = 'success') as successful_migrations,
+      COUNT(*) FILTER (WHERE type = 'up' AND status = 'failed') as failed_migrations,
+      COUNT(*) FILTER (WHERE type = 'down') as rollbacks,
+      MAX(applied_at) FILTER (WHERE status = 'success') as last_successful_migration,
+      MIN(applied_at) FILTER (WHERE status = 'success') as first_migration,
+      AVG(execution_time_ms) FILTER (WHERE status = 'success') as avg_execution_time
+    FROM ${MIGRATIONS_TABLE}
+  `);
+
+  return result.rows[0];
 }
 
 /**
@@ -285,40 +371,83 @@ async function migrateDown(pool, targetVersion = null, steps = 1) {
 }
 
 /**
- * Show migration status
+ * Show migration status with enhanced reporting
  */
 async function showStatus(pool) {
   const migrations = groupMigrationsByVersion(getMigrationFiles());
   const appliedMigrations = await getAppliedMigrations(pool);
   const appliedMap = new Map(appliedMigrations.map(m => [m.version, m]));
   const currentVersion = await getCurrentVersion(pool);
-  
-  console.log('\n=== Migration Status ===');
-  console.log(`Current version: ${currentVersion}`);
-  console.log(`Total migrations: ${migrations.length}`);
-  console.log('\nMigration history:');
-  
+  const health = await checkDatabaseHealth(pool);
+  const stats = await getMigrationStats(pool);
+
+  console.log('\n╔════════════════════════════════════════════════════════════════╗');
+  console.log('║              Database Migration Status Report                  ║');
+  console.log('╚════════════════════════════════════════════════════════════════╝\n');
+
+  console.log('┌─────────────────────────────────────────────────────────────────┐');
+  console.log('│ Database Information                                            │');
+  console.log('├─────────────────────────────────────────────────────────────────┤');
+  console.log(`│ Host: ${DB_HOST}:${DB_PORT}`.padEnd(64) + '│');
+  console.log(`│ Database: ${DB_NAME}`.padEnd(64) + '│');
+  console.log(`│ Version: ${health.healthy ? health.version : 'N/A'}`.padEnd(64) + '│');
+  console.log(`│ Active Connections: ${health.healthy ? health.activeConnections : 'N/A'}`.padEnd(64) + '│');
+  console.log('└─────────────────────────────────────────────────────────────────┘\n');
+
+  console.log('┌─────────────────────────────────────────────────────────────────┐');
+  console.log('│ Migration Statistics                                            │');
+  console.log('├─────────────────────────────────────────────────────────────────┤');
+  console.log(`│ Total Migrations: ${stats.total_migrations || 0}`.padEnd(64) + '│');
+  console.log(`│ Successful: ${stats.successful_migrations || 0}`.padEnd(64) + '│');
+  console.log(`│ Failed: ${stats.failed_migrations || 0}`.padEnd(64) + '│');
+  console.log(`│ Rollbacks: ${stats.rollbacks || 0}`.padEnd(64) + '│');
+  console.log(`│ Avg Execution Time: ${stats.avg_execution_time ? Math.round(stats.avg_execution_time) + 'ms' : 'N/A'}`.padEnd(64) + '│');
+  console.log(`│ Current Version: ${currentVersion}`.padEnd(64) + '│');
+  console.log('└─────────────────────────────────────────────────────────────────┘\n');
+
+  console.log('┌─────────────────────────────────────────────────────────────────┐');
+  console.log('│ Migration History                                               │');
+  console.log('├─────┬────────────────────────────────────────┬────────┬──────────┤');
+  console.log('│ Ver │ Name                                   │ Status │ Time     │');
+  console.log('├─────┼────────────────────────────────────────┼────────┼──────────┤');
+
   migrations.forEach(migration => {
     const applied = appliedMap.get(migration.version);
     let status = 'pending';
-    let appliedAt = '';
-    
+    let time = '';
+    let statusSymbol = '○';
+
     if (applied) {
       if (applied.type === 'up' && applied.status === 'success') {
         status = 'applied';
-        appliedAt = applied.applied_at;
+        time = applied.execution_time_ms ? `${applied.execution_time_ms}ms` : '';
+        statusSymbol = '✓';
       } else if (applied.type === 'down' && applied.status === 'success') {
         status = 'rolled back';
+        statusSymbol = '↺';
       } else if (applied.status === 'failed') {
-        status = `failed: ${applied.error_message}`;
+        status = 'failed';
+        statusSymbol = '✗';
       }
     }
-    
-    const statusIcon = status === 'applied' ? '✓' : status === 'pending' ? '○' : '✗';
-    console.log(`  ${statusIcon} ${migration.version.toString().padStart(3)}: ${migration.name.padEnd(25)} ${status}${appliedAt ? ` (${appliedAt})` : ''}`);
+
+    const version = migration.version.toString().padStart(3);
+    const name = migration.name.substring(0, 40).padEnd(40);
+    const statusDisplay = status.substring(0, 8).padEnd(8);
+    const timeDisplay = time.substring(0, 10).padEnd(10);
+
+    console.log(`│ ${version} │ ${name} │ ${statusDisplay} │ ${timeDisplay} │`);
   });
-  
-  console.log('========================\n');
+
+  console.log('└─────┴────────────────────────────────────────┴────────┴──────────┘\n');
+
+  console.log('Legend: ○ = Pending | ✓ = Applied | ↺ = Rolled Back | ✗ = Failed\n');
+
+  log(LOG_LEVELS.DEBUG, 'Status report generated', {
+    currentVersion,
+    totalMigrations: migrations.length,
+    stats
+  });
 }
 
 /**
@@ -356,9 +485,19 @@ async function createMigration(name) {
 }
 
 /**
- * Main function
+ * Main function with enhanced error handling and logging
  */
 async function main() {
+  const startTime = Date.now();
+  const machineInfo = getMachineInfo();
+
+  log(LOG_LEVELS.INFO, 'Migration process starting', {
+    machine: machineInfo,
+    arguments: process.argv.slice(2),
+    nodeVersion: process.version,
+    cwd: process.cwd()
+  });
+
   const pool = new Pool({
     host: DB_HOST,
     port: DB_PORT,
@@ -366,19 +505,37 @@ async function main() {
     user: DB_USER,
     password: DB_PASSWORD,
   });
-  
+
   try {
+    log(LOG_LEVELS.INFO, 'Connecting to database', {
+      host: DB_HOST,
+      port: DB_PORT,
+      database: DB_NAME
+    });
+
     await createMigrationsTable(pool);
-    
+    log(LOG_LEVELS.DEBUG, 'Migrations table initialized');
+
+    const dbHealth = await checkDatabaseHealth(pool);
+    if (!dbHealth.healthy) {
+      log(LOG_LEVELS.WARN, 'Database health check failed, proceeding anyway', {
+        error: dbHealth.error
+      });
+    } else {
+      log(LOG_LEVELS.DEBUG, 'Database health check passed', dbHealth);
+    }
+
     const args = process.argv.slice(2);
-    const command = args[0];
-    
+    const command = args[0] || 'status';
+
+    log(LOG_LEVELS.INFO, `Executing command: ${command}`, { args });
+
     switch (command) {
       case 'up':
         const targetVersionUp = args[1] ? parseInt(args[1], 10) : null;
         await migrateUp(pool, targetVersionUp);
         break;
-        
+
       case 'down':
         if (args[1] === '--to' && args[2]) {
           await migrateDown(pool, parseInt(args[2], 10));
@@ -388,11 +545,11 @@ async function main() {
           await migrateDown(pool);
         }
         break;
-        
+
       case 'status':
         await showStatus(pool);
         break;
-        
+
       case 'create':
         if (args[1]) {
           await createMigration(args[1]);
@@ -401,7 +558,19 @@ async function main() {
           process.exit(1);
         }
         break;
-        
+
+      case 'health':
+        const health = await checkDatabaseHealth(pool);
+        console.log('\n=== Database Health Check ===');
+        console.log(JSON.stringify(health, null, 2));
+        break;
+
+      case 'stats':
+        const stats = await getMigrationStats(pool);
+        console.log('\n=== Migration Statistics ===');
+        console.log(JSON.stringify(stats, null, 2));
+        break;
+
       default:
         console.log(`
 Usage: node migrate.js <command> [options]
@@ -410,8 +579,18 @@ Commands:
   up [version]          Apply pending migrations (optionally up to a specific version)
   down [steps]          Rollback last [steps] migrations (default: 1)
   down --to <version>   Rollback down to a specific version
-  status                Show migration status
+  status                Show migration status (default)
   create <name>         Create a new migration
+  health                Check database health
+  stats                 Show migration statistics
+
+Environment Variables:
+  DB_HOST               Database host (default: localhost)
+  DB_PORT               Database port (default: 5432)
+  DB_NAME               Database name (default: hjtpx)
+  DB_USER               Database user (default: postgres)
+  DB_PASSWORD           Database password (default: postgres)
+  MIGRATION_LOG_LEVEL   Log level: DEBUG, INFO, WARN, ERROR (default: INFO)
 
 Examples:
   node migrate.js up
@@ -421,11 +600,37 @@ Examples:
   node migrate.js down --to 2
   node migrate.js status
   node migrate.js create add_users_table
+  node migrate.js health
+  node migrate.js stats
+  MIGRATION_LOG_LEVEL=DEBUG node migrate.js status
 `);
         process.exit(1);
     }
+
+    const executionTime = Date.now() - startTime;
+    log(LOG_LEVELS.INFO, 'Migration process completed', {
+      command,
+      executionTimeMs: executionTime,
+      success: true
+    });
+
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    log(LOG_LEVELS.ERROR, 'Migration process failed', {
+      command: process.argv.slice(2),
+      executionTimeMs: executionTime,
+      error: error.message,
+      stack: error.stack
+    });
+
+    console.error('\n❌ Migration failed:', error.message);
+    if (process.env.MIGRATION_LOG_LEVEL === 'DEBUG') {
+      console.error(error.stack);
+    }
+    process.exit(1);
   } finally {
     await pool.end();
+    log(LOG_LEVELS.DEBUG, 'Database connection closed');
   }
 }
 
@@ -442,5 +647,8 @@ module.exports = {
   showStatus,
   createMigration,
   getMigrationFiles,
-  getCurrentVersion
+  getCurrentVersion,
+  checkDatabaseHealth,
+  getMigrationStats,
+  LOG_LEVELS
 };

@@ -1,6 +1,8 @@
 -- Migration: Initial Schema
 -- Created: 2026-05-14
 -- Description: Creates initial database schema with core tables
+-- Performance: Uses IF NOT EXISTS for idempotent index creation
+-- Note: For production with large tables, consider creating indexes CONCURRENTLY
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
@@ -16,11 +18,12 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create users indexes
+-- Create users indexes (optimized for common queries)
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_email_active ON users(email, is_active) WHERE is_active = true;
 
 -- Create sessions table
 CREATE TABLE IF NOT EXISTS sessions (
@@ -44,6 +47,8 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_is_revoked ON sessions(is_revoked);
 CREATE INDEX IF NOT EXISTS idx_sessions_last_activity ON sessions(last_activity);
 CREATE INDEX IF NOT EXISTS idx_sessions_is_current ON sessions(is_current);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(user_id, expires_at) 
+  WHERE is_revoked = false AND expires_at > CURRENT_TIMESTAMP;
 
 -- Create migrations tracking table
 CREATE TABLE IF NOT EXISTS migrations (

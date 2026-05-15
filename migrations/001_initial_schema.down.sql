@@ -8,7 +8,9 @@ DROP TRIGGER IF EXISTS update_sessions_last_activity ON sessions;
 -- Drop functions
 DROP FUNCTION IF EXISTS update_updated_at_column;
 
--- Drop indexes
+-- Drop indexes (in reverse order of creation)
+DROP INDEX IF EXISTS idx_sessions_active;
+DROP INDEX IF EXISTS idx_users_email_active;
 DROP INDEX IF EXISTS idx_users_email;
 DROP INDEX IF EXISTS idx_users_role;
 DROP INDEX IF EXISTS idx_users_created_at;
