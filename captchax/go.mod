@@ -2,6 +2,8 @@ module captchax
 
 go 1.25.0
 
+replace github.com/captchax/sdk/go/captchax => ./sdk/go
+
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
