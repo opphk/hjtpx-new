@@ -11,7 +11,7 @@ const compression = require('compression');
 const express = require('express');
 
 const productionConfig = require('./backend/config/production');
-const { securityHeaders, additionalSecurityHeaders } = require('./backend/middleware/securityHeaders');
+const { securityHeaders, additionalSecurityHeaders, helmetMiddleware } = require('./backend/middleware/securityHeaders');
 const { initSentry, Sentry } = require('./backend/config/sentry');
 const { createApolloServer } = require('./backend/graphql');
 
@@ -66,6 +66,10 @@ if (productionConfig.production.enableCompression) {
       }
     })
   );
+}
+
+if (isProduction && productionConfig.security.enableHelmet) {
+  app.use(helmetMiddleware);
 }
 
 app.use(express.json({ limit: '10mb' }));
